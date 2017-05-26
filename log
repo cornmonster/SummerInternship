@@ -1,0 +1,43 @@
+---5/24/2017---
+
+I had a meeting with Changbin today. We discussed about the following works.
+	
+	0. setup S3QL test environment. Try to find out the reason of memory leak.
+
+	1. Understand glusterfs's consistency model.
+	2. Figure out how does glusterfs handle failure.
+	3. Figure out glusterfs's DHT implementation.
+
+	4. Learn C++/Python coding style.
+
+I tried to setup S3QL server and there are some dependency to be installed. Here
+are some details:
+
+	- SQLite
+		apt-get install libsqlite3-dev
+	- setuptools
+		pip3 install setuptools
+	- apsw
+		pip3 install git+https://github.como/rogerbinns/apsw@3.7.13-r1#egg=apsw
+
+I will finished installing S3QL tomorrow. And I will start testing the memory
+leak bug.
+
+---5/25/2017---
+
+First of all, has python3.5 installed!!!!!!
+then execute the following command:
+   		alias python3=python3.5
+
+1. About llfuse:
+	1. download and unpack the release from https://pypi.python.org/pypi/llfuse/
+	2. run python setup.py build_ext --inplace to build the C extension
+	3. run python -m pytest test/ to run a self-test
+
+before that, run apt-get install libattr1-dev
+
+2. About version of S3QL:
+	download the file from https://bitbucket.org/nikratio/s3ql/downloads/, choose
+	s3ql-2.21.tar.bz2
+	there will be some syntax problem about encoding, just modify the source code
+	and it can be solved.
