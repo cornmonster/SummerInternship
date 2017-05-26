@@ -14,9 +14,10 @@ I tried to setup S3QL server and there are some dependency to be installed. Here
 are some details:
 
 	- SQLite
-		apt-get install libsqlite3-dev
+		apt-get install libsqlite3-dev, 3.7.0 or later is required, current 
+		version on 10.2.63.85 is 3.8.2
 	- setuptools
-		pip3 install setuptools
+		pip3 install setuptools, current version on 10.2.63.85 is 3.3
 	- apsw
 		pip3 install git+https://github.como/rogerbinns/apsw@3.7.13-r1#egg=apsw
 
@@ -25,14 +26,17 @@ leak bug.
 
 ---5/25/2017---
 
-First of all, has python3.5 installed!!!!!!
-then execute the following command:
-   		alias python3=python3.5
+Keep using python3.4.X, but should install python3-systemd for python3.4.X and
+libsystemd0 is also required. Goto debian for the packages. To install 
+libsystemd0, we need to install libgcrypt20 (>= 1.7.0) firstly. Be careful 
+about the version of packages, the version of libsystemd0 should be the same 
+as python3-systemd (215-xxx). I finally installed S3QL successfully in this way.
 
 1. About llfuse:
 	1. download and unpack the release from https://pypi.python.org/pypi/llfuse/
 	2. run python setup.py build_ext --inplace to build the C extension
-	3. run python -m pytest test/ to run a self-test
+	3. run python3 -m pytest test/ to run a self-test
+	4. run python3 setup.py install to install llfuse for all users
 
 before that, run apt-get install libattr1-dev
 
@@ -41,3 +45,8 @@ before that, run apt-get install libattr1-dev
 	s3ql-2.21.tar.bz2
 	there will be some syntax problem about encoding, just modify the source code
 	and it can be solved.
+
+Today I successfully installed S3QL and passed self-tests. Tomorrow I will try to
+configure the backend and start to test the memory leak problem.
+
+---5/26/2017---
