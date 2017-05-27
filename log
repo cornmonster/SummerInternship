@@ -18,8 +18,25 @@ are some details:
 		version on 10.2.63.85 is 3.8.2
 	- setuptools
 		pip3 install setuptools, current version on 10.2.63.85 is 3.3
+	- pycrypto
+		pip3 install pycrypto
+	-defusedxml
+		pip3 install defusedxml
+	-requests
+		pip3 install requests
+	-pytest
+		pip3 install pytest
+	-pytest-catchlog
+		pip3 install pytest-catchlog
 	- apsw
-		pip3 install git+https://github.como/rogerbinns/apsw@3.7.13-r1#egg=apsw
+		pip3 install git+https://github.com/rogerbinns/apsw@3.7.13-r1#egg=apsw
+	-systemd
+		dpkg -i libgpg-error0_1.17-3_amd64.deb
+		dpkg -i libgcrypt20_1.7.0-2_amd64.deb
+		dpkg -i libsystemd0_215-17+deb8u7_amd64.deb
+		dpkg -i python3-systemd_215-17+deb8u7_amd64.deb
+	-dugong
+		pip3 install dugong
 
 I will finished installing S3QL tomorrow. And I will start testing the memory
 leak bug.
@@ -34,11 +51,15 @@ as python3-systemd (215-xxx). I finally installed S3QL successfully in this way.
 
 1. About llfuse:
 	1. download and unpack the release from https://pypi.python.org/pypi/llfuse/
+	1.1 apt-get install pkg-config
+	1.2 apt-get install libfuse-dev
+	1.3 apt-get install libattr1-dev
 	2. run python setup.py build_ext --inplace to build the C extension
 	3. run python3 -m pytest test/ to run a self-test
 	4. run python3 setup.py install to install llfuse for all users
 
-before that, run apt-get install libattr1-dev
+
+before that, 
 
 2. About version of S3QL:
 	download the file from https://bitbucket.org/nikratio/s3ql/downloads/, choose
@@ -50,3 +71,77 @@ Today I successfully installed S3QL and passed self-tests. Tomorrow I will try t
 configure the backend and start to test the memory leak problem.
 
 ---5/26/2017---
+
+-About s3ql:
+
+Basicly, we have the following commands:
+	
+	1.  mkfs.s3ql [options] <storage url>, which creates a s3ql file system.
+	   	In this case, the command should be mkfs.s3ql --backend_options no-ssl url
+
+	2.  mount.s3ql [options] <storage url> <mountpoint>, which mounts the storage
+	   	url under specific mountpoint. In this case, the command should be 
+	   	mount.s3ql --backend-options no-ssl url mountpoint
+
+-About starting on boot:
+	
+	create a file names /etc/init/s3ql.conf with the contents:
+
+		start on (started networking)
+		stop on starting rc RUNLEVEL=[016]
+		expect stop
+		kill timeout 300
+		limit nofile 66000 66000
+		console log
+
+		pre-stop script
+			umount.s3ql /mnt/s3ql
+		end script
+
+		exec /usr/local/bin/mount.s3ql --backend-options no-ssl swift://10.2.68.85:8080/s3ql /mnt/s3ql
+
+	end
+
+-Setting up an NFS Server:
+	
+	1.  Setting up the config files:
+
+		/etc/exports
+		This file contains a list of entries; each entry indicates a volume that is 
+		shared an how it is shared.
+		Typically, it looks like this:
+
+			directory machine1(option11,option12)
+			machine2(option21,option22)
+
+		Where directory is the directory that you want to share. It may be an entire
+		volume though it need not be. If you share a directory, then all directories
+		under it within the same file systen will be shared as well.
+
+		In our case, our exports file should looks like this:
+
+			/mnt/s3ql/usr1/ user1(rw)
+			/mnt/s3ql/usr2/ user2(rw)
+			...
+
+		end
+
+	2.  Install nfs-kernel-server:
+
+			sudo apt-get install nfs-kernel-server
+
+		Then start the NFS server:
+
+			sudo service nfs-kernel-server start
+
+	3.  Client config:
+
+			sudo mount 10.2.63.85:/mnt/s3ql/userX
+
+-How to decompress .tar.bz2: 	tar -vxjf
+
+
+
+
+
+
