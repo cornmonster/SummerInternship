@@ -1,0 +1,14 @@
+[console_scripts]
+s3qlcp = s3ql.cp:main
+s3qlstat = s3ql.statfs:main
+s3qlrm = s3ql.remove:main
+mkfs.s3ql = s3ql.mkfs:main
+mount.s3ql = s3ql.mount:main
+s3ql_oauth_client = s3ql.oauth_client:main
+umount.s3ql = s3ql.umount:main
+s3qllock = s3ql.lock:main
+s3qlctrl = s3ql.ctrl:main
+s3qladm = s3ql.adm:main
+fsck.s3ql = s3ql.fsck:main
+s3ql_verify = s3ql.verify:main
+
