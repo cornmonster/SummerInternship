@@ -163,6 +163,9 @@ def create_tables(conn):
     # Refcount is included for performance reasons
     # size == -1 indicates block has not been uploaded yet
     conn.execute("""
+        USE S3QL;
+    """)
+    conn.execute("""
     CREATE TABLE objects (
         id        INTEGER PRIMARY KEY AUTO_INCREMENT,
         refcount  INT NOT NULL,

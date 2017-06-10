@@ -185,7 +185,7 @@ def main(args=None):
             faulthandler.register(signal.SIGUSR1, file=crit_log_fh)
             daemonize(options.cachedir)
 
-        mark_metadata_dirty(backend, cachepath, param)
+        # mark_metadata_dirty(backend, cachepath, param)
 
         block_cache.init(options.threads)
         cm.callback(block_cache.destroy)
@@ -244,7 +244,7 @@ def main(args=None):
             save_params(cachepath, param)
         elif seq_no == param['seq_no']:
             param['last-modified'] = time.time()
-            dump_and_upload_metadata(backend, db, param)
+            # dump_and_upload_metadata(backend, db, param)
             save_params(cachepath, param)
         else:
             log.error('Remote metadata is newer than local (%d vs %d), '

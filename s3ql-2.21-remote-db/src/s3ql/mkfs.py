@@ -86,7 +86,7 @@ def main(args=None):
 
     options = parse_args(args)
     setup_logging(options)
-
+    
     if options.max_obj_size < 1024:
         # This warning should never be converrted to an exception
         log.warning('Maximum object sizes less than 1 MiB will degrade '
@@ -166,7 +166,7 @@ def main(args=None):
     param['last-modified'] = time.time()
 
     log.info('Dumping metadata...')
-    dump_and_upload_metadata(backend, db, param)
+    # dump_and_upload_metadata(backend, db, param)
     backend.store('s3ql_seq_no_%d' % param['seq_no'], b'Empty')
     with open(cachepath + '.params', 'wb') as fh:
         fh.write(freeze_basic_mapping(param))

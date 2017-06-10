@@ -14,33 +14,46 @@ Module Attributes:
 '''
 
 from .logging import logging, QuietError # Ensure use of custom logger class
-import apsw
+import mysql
 import os
 
 log = logging.getLogger(__name__)
 
-sqlite_ver = tuple([ int(x) for x in apsw.sqlitelibversion().split('.') ])
-if sqlite_ver < (3, 7, 0):
-    raise QuietError('SQLite version too old, must be 3.7.0 or newer!\n')
-
-
+# *modified*: comments are added
+# most of commands in initsql are not necessary when using a mysql database.
 initsql = (
            # WAL mode causes trouble with e.g. copy_tree, so we don't use it at the moment
            # (cf. http://article.gmane.org/gmane.comp.db.sqlite.general/65243).
            # However, if we start using it we must initiaze it *before* setting
            # locking_mode to EXCLUSIVE, otherwise we can't switch the locking
            # mode without first disabling WAL.
+
+           # synchronous pragma sets the current disk synchronization mode, which controls
+           # how aggressively SQLite will write data all the way out to physical storage.
+           # Setting Pragma synchronous to OFF means no syncs at all.
            'PRAGMA synchronous = OFF',
+           # journal_mode pragma controls how the journal file is stored and processed.
+           # Setting Pragma journal_mode to OFF means no journal record is kept.
            'PRAGMA journal_mode = OFF',
+
            #'PRAGMA synchronous = NORMAL',
            #'PRAGMA journal_mode = WAL',
 
+           # foreign_keys pragma disables foreign key constrain
            'PRAGMA foreign_keys = OFF',
+           # locking_mode pragma being set to EXCLUSIVE means the connection will not release
+           # the lock until the end of the connection. 
            'PRAGMA locking_mode = EXCLUSIVE',
+           # This may be a typo, it should be recursive_triggers. This pragma enables recursive
+           # triggers.
            'PRAGMA recursize_triggers = on',
+           # This pragma sets the page size of the database.
            'PRAGMA page_size = 4096',
+           # This pragma sets write-ahead log auto-checkpoint interval.
            'PRAGMA wal_autocheckpoint = 25000',
+           # This pragma makes temporary tables and indices stored in a file.
            'PRAGMA temp_store = FILE',
+           # This pragma is off, new databases are created using the latest file format.
            'PRAGMA legacy_file_format = off',
            )
 
@@ -61,25 +74,42 @@ class Connection(object):
     :conn:     apsw connection object
     '''
 
-    def __init__(self, file_):
-        self.conn = apsw.Connection(file_)
-        self.file = file_
+    # *modified*: changed the argument list and the way to handle the arguments
+    def __init__(self):
+        self.conn = mysql.connector.connect(host='10.2.72.85',
+                                            user='user-002',
+                                            password='password',
+                                            db='S3QL')
 
-        cur = self.conn.cursor()
+    # def __init__(self, host, user, password, db):
+    #     self.host = host
+    #     self.user = user;
+    #     self.password = password
+    #     self.db = db
+    #     self.conn = mysql.connector.connect(host=self.host,
+    #                                         user=self.user,
+    #                                         password=self.password,
+    #                                         db=self.db)
 
-        for s in initsql:
-            cur.execute(s)
+        # not sure if pragmas are needed
+        # cur = self.conn.cursor()
+
+        # for s in initsql:
+        #     cur.execute(s)
 
     def close(self):
         self.conn.close()
 
+    # *modified* : Since there is no local db, we just return a constant
     def get_size(self):
         '''Return size of database file'''
 
-        if self.file is not None and self.file not in ('', ':memory:'):
-            return os.path.getsize(self.file)
-        else:
-            return 0
+        # if self.file is not None and self.file not in ('', ':memory:'):
+        #     return os.path.getsize(self.file)
+        # else:
+        #     return 0
+
+        return 0
 
     def query(self, *a, **kw):
         '''Return iterator over results of given SQL statement
@@ -92,17 +122,27 @@ class Connection(object):
 
         return ResultSet(self.conn.cursor().execute(*a, **kw))
 
+    # *modified*: Since mysql does't provide changes(), we need to return the cursor
+    # attribute rowcount.
     def execute(self, *a, **kw):
         '''Execute the given SQL statement. Return number of affected rows '''
 
-        self.conn.cursor().execute(*a, **kw)
-        return self.changes()
+        # self.conn.cursor().execute(*a, **kw)
+        # return self.changes()
 
+        cur = self.conn.cursor()
+        cur.execute(*a, **kw)
+        return cur.rowcount
+
+    # *need to be modified*: mysql doesn't provide rowid. So we have to use
+    # 'SELECT LAST_INSERT_ID()' to get the last inserted rowid
     def rowid(self, *a, **kw):
         """Execute SQL statement and return last inserted rowid"""
 
         self.conn.cursor().execute(*a, **kw)
-        return self.conn.last_insert_rowid()
+        # return self.conn.last_insert_rowid()
+        sql = 'SELECT LAST_INSERT_ID()'
+        return self.getval(sql)
 
     def has_val(self, *a, **kw):
         '''Execute statement and check if it gives result rows'''
@@ -155,15 +195,19 @@ class Connection(object):
 
         return row
 
-    def last_rowid(self):
-        """Return rowid most recently inserted in the current thread"""
+    # *need to be modified*: mysql doesn't provide rowid. Since there is no reference
+    # to this method, we just comment it.
+    # def last_rowid(self):
+    #     """Return rowid most recently inserted in the current thread"""
 
-        return self.conn.last_insert_rowid()
+    #     return self.conn.last_insert_rowid()
 
-    def changes(self):
-        """Return number of rows affected by most recent sql statement"""
 
-        return self.conn.changes()
+    # *modified*: mysql doesn't provide the methon changes(), so we don't use this method any more.
+    # def changes(self):
+    #     """Return number of rows affected by most recent sql statement"""
+
+    #     return self.conn.changes()
 
 
 class NoUniqueValueError(Exception):
