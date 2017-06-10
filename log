@@ -98,7 +98,7 @@ Basicly, we have the following commands:
 			umount.s3ql /mnt/s3ql
 		end script
 
-		exec /usr/local/bin/mount.s3ql --backend-options no-ssl swift://10.2.68.85:8080/s3ql /mnt/s3ql
+		exec /usr/local/bin/mount.s3ql --backend-options no-ssl --cachedir /root/.s3ql swift://10.2.68.85:8080/s3ql /mnt/s3ql
 
 	end
 
@@ -128,20 +128,398 @@ Basicly, we have the following commands:
 
 	2.  Install nfs-kernel-server:
 
-			sudo apt-get install nfs-kernel-server
+			$ sudo apt-get install nfs-kernel-server
 
 		Then start the NFS server:
 
-			sudo service nfs-kernel-server start
+			$ sudo service nfs-kernel-server start
 
 	3.  Client config:
 
-			sudo mount 10.2.63.85:/mnt/s3ql/userX
+			$ sudo mount 10.2.63.85:/mnt/s3ql/userX <mount point>
 
 -How to decompress .tar.bz2: 	tar -vxjf
 
+---5/27/2017---
+
+On server zhong1, there is a S3QL server running. The backend is 
+swift://10.2.68.85:8080/s3ql and the mount point is /mnt/s3ql. Metadata for the 
+S3QL server is stored in /root/.s3ql.
+
+On server zhong3, there is also a S3QL server running and it have same backend
+as zhong1. zhong11:/root/.s3ql and zhong3:/root/.s3ql are synced by glusterfs.
+
+I created some directories and files under the directory /mnt/s3ql. For each sub-
+directory, I also created some files.
+
+---5/28/2017---
+
+Trying to shut down a s3ql server and recover it.
+
+Exp 1 Failed:
+	Firstly, I rebooted the server. Then I used
+
+	$ fsck.s3ql --cachedir /root/.s3ql/ --backend-options no-ssl swift://10.2.68.85:8080/s3ql --force
+	$ s3ql_verify --backend-options no-ssl --cachedir /root/.s3ql --data swift://10.2.68.85:8080/s3ql
+	$ mount.s3ql --backend-options no-ssl --cachedir /root/.s3ql --nfs --compress none swift://10.2.68.85:8080/s3ql /mnt/s3ql
+	$ umount.s3ql /mnt/s3ql
+	and this command deleted all the data I have.
+
+remount glusterfs(on both s3ql server):
+	
+	$ mount -t glusterfs 10.2.63.85:/s3ql_meta /root/.s3ql
+
+restart nfs: 
+
+	$ service nfs-kernel-server restart
+
+client remount:
+	
+	$ umount /home/ubuntu/nfs
+	$ mount 10.2.63.85:/mnt/s3ql/user1 /home/ubuntu/nfs/
+
+Try to reconstruct the file system:
+	
+	$ mkfs.s3ql --cachedir /root/.s3ql --backend-options no-ssl --plain swift://10.2.68.85:8080/s3ql
+
+---5/29/2017---
+
+Testing memory leak:
+
+	1.  Set up two s3ql servers, S1 and S2. Their metadata is synchronized by Glusterfs
+	2.  Let S1 mount the backend (swift://10.2.68.85:8080/s3ql) at S1:/mnt/s3ql
+		Generate some files and save the md5sums.
+	3.  Set up a client C1 and let C1 mount S1:/mnt/s3ql/user1
+	4.  Reboot S1 and let C1 umount the NFS 
+
+	Start checking memory leak on S2:
+	5.  Execute fsck on S2               
+	6.  Let S2 mount the backend          
+	7.  Let C1 mount S2:/mnt/s3ql/user1
+		Generate md5sums for files downloaded from backend and check if the md5sums are
+		the same as the md5sums when files are created.
+
+To verify the documents, I used md5sum. The shell script is saved as md5sum_generator.sh.
+
+---5/30/2017---
+
+Expr1:
+This morning I found memory leak. The size of files are about 2GB, and after compression it
+takes up about 800~900MB. 
+
+I rebooted the s3ql server (zhong3) and mount the backend at another server (zhong1). The
+memory usage of zhong1 is about 700MB (680-700). But after a while, the memory usage decreased
+to about 260MB.
+
+Expr2:
+I created 4000 files, each file is 1MB. And the memory usage is 1700MB. But memory leak did 
+not appear when failing over happened.
+
+Expr3:
+I created 1500 files, each file is 1MB. And the memory usage keep increasing from 206MB to
+1180. 
+After reboot, the memory usage is about 600MB. 
+
+Expr4:
+Created 400 files, each file is 1MB. The memory usage increases to 478MB.
 
 
 
+DHT Translator:
+
+	Responsibility: place each file on exactly one of its subvolumes.
+
+	Basic method used in DHT is consistent hashing (linear). Each brick is assigned a range 
+	within a 32-bit hash space, covering the entire range with no holes or overlaps. Each 
+	file is also assigned a value in the same space.
+
+	Failure cases are mentioned, but conresponding solutions are not given.
 
 
+AFR Translator:
+
+	Responsibility: replicate the data across the bricks.
+	Algorithm:
+		All operations are done in parallel unless specified otherwise.
+
+    	1.	Send a GF_FILE_LK request on all children for a write lock on the appropriate region 
+    	(for metadata operations: entire file (0, 0) for writev: (offset, offset+size of buffer))
+        	-If a lock request fails on a child:
+	            -unlock all children
+	            -try to acquire a blocking lock (F_SETLKW) on each child, serially. If this 
+	             fails (due to ENOTCONN or EINVAL): Consider this child as dead for rest of transaction.
+    	2.	Mark all children as "pending" on all (alive) children (see below for meaning of "pending").
+        	-If it fails on any child:
+            	-mark it as dead (in transaction local state).
+    	3.	Perform operation on all (alive) children.
+        	-If it fails on any child:
+            	-mark it as dead (in transaction local state).
+    	4.	Unmark all successful children as not "pending" on all nodes.
+    	5.	Unlock region on all (alive) children.
+
+
+---5/31/2017---
+
+Have a meeting with Changbin today, here are targets for the following days:
+
+	1. 	verify memory leak
+	2.	learn glusterfs: failure & recovery, learn glusterd (how to sync)
+	3.	learn s3ql
+
+new x86 VM: 10.2.154.85
+
+Trying to set up nfs connection from client to server, but did not find a solution. Maybe
+NFS-Ganesha is a solution.
+
+---6/1/2017---
+
+Trying to figure out if the memory leak is caused by S3QL. So I use garble_generator.sh to
+generator 9,000 files. Each file is 1MB. This is a simulation of S3QL.
+
+Mount glusterfs/test-vol at mount point /home/ubuntu/nfs on zhong3. Mount 
+zhong3:/home/ubuntu/nfs at mount point /home/ubumtu/nfs on zhong2(client). Use garble_generator
+to ganerator 9,000 files. Each file is 1MB. No memory leak detect yet.
+
+---6/2/2017---
+
+Start reading s3ql code, trying to understand how s3ql records its metadata. 
+
+Let's start with mkfs.py. mkfs.py does the following things:
+
+	1.	parse the command line
+	2.	get backend handler
+	3.	setup database and parameter file
+	4.	dump and upload metadata to backend
+
+mount.py does the following things:
+	
+	...
+
+The memory leak may be caused by sqlite working with glusterfs. So I wrote a simple script to test it.
+
+---6/3/2017---
+
+1.	acc test.py (done)
+2.	move .db to another dir and check memory leak
+3.	yas3fs
+
+---6/5/2017---
+
+Today, I tried to move .db to another dir and check memory leak. So I have to make some changes to the source code and regenerate the .egg file. 
+
+My idea is to let .db stored at the parent directory of cache directory. For example, lets assume the cache directory is /root/.s3ql, then the .db will be stored at /root/ .
+
+Here is the list of files that I need to modify:
+
+	1.	/home/jon/Work/s3ql/src/s3ql/adm.py (not necessary, didn't modify)
+
+	2.	/home/jon/Work/s3ql/src/s3ql/database.py (not necessary, didn't modify)
+
+	3.	/home/jon/Work/s3ql/src/s3ql/fsck.py
+		origin:
+			1050:         db = Connection(path + '.db')
+		after modification:
+			# replace the last '/' with '/../'
+	        idx_last_slash = path.rfind('/')
+	        temp_cachepath = path[0:idx_last_slash] + '/..' + path[idx_last_slash:]
+	        db = Connection(temp_path + '.db')
+
+	    origin:
+	    	1172:             db = Connection(cachepath + '.db')
+	    after modification:
+		    # replace the last '/' with '/../'
+            idx_last_slash = cachepath.rfind('/')
+            temp_cachepath = cachepath[0:idx_last_slash] + '/..' + cachepath[idx_last_slash:]
+            db = Connection(temp_cachepath + '.db')
+
+    4.	/home/jon/Work/s3ql/src/s3ql/metadata.py
+    	origin:
+    		82:    tmpfile = tmpdbfile + '.tmp'
+    	after modification:
+    		# replace the last '/' with '/../'
+		    idx_last_slash = dbfile.rfind('/')
+		    tmpdbfile = dbfile[0:idx_last_slash] + '/..' + dbfile[idx_last_slash:]
+		    tmpfile = tmpdbfile + '.tmp'
+
+		origin:
+		    110:		os.rename(tmpfile, tmpdbfile)
+			112:	    return Connection(dbfile)
+		after modification:
+		    os.rename(tmpfile, tmpdbfile)
+
+		    return Connection(tmpdbfile)
+
+	5. 	/home/jon/Work/s3ql/src/s3ql/mkfs.py
+		origin:
+			152      log.info('Creating metadata tables...')
+			153:     db = Connection(cachepath + '.db')
+			154      create_tables(db)
+			155      init_tables(db)
+		after midification:
+		    # replace the last '/' with '/../'
+		    idx_last_slash = cachepath.rfind('/')
+		    temp_cachepath = cachepath[0:idx_last_slash] + '/..' + cachepath[idx_last_slash:]
+
+		    if os.path.exists(temp_cachepath + '.db'):
+		        os.unlink(temp_cachepath + '.db')
+		    if os.path.exists(cachepath + '-cache'):
+		        shutil.rmtree(cachepath + '-cache')
+
+		    log.info('Creating metadata tables...')
+		    db = Connection(temp_cachepath + '.db')
+		    create_tables(db)
+		    init_tables(db)
+
+	6.  /home/jon/Work/s3ql/src/s3ql/mount.py
+		origin:
+			371              log.info('Using cached metadata.')
+			372:             db = Connection(cachepath + '.db')
+		after modification:
+			idx_last_slash = cachepath.rfind('/')
+            temp_cachepath = cachepath[0:idx_last_slash] + '/..' + cachepath[idx_last_slash:]
+            db = Connection(temp_cachepath + '.db')
+
+Attention!!! There are some other minor modifications.
+
+After modification, I started 10 garble_generator to produce files. There will be 10,000 files and each file is 1MB.
+
+---6/6/2017---
+
+Did not find memory leak yesterday. Today I will try to move the .db file out of the cacahe dir perfectly and do some more experiments.
+
+I moved the .db file out of the cache dir perfectly, but it seems that memory leak still happened.
+
+Today I also learned knowledge about fuse and read some code of libfuse.
+
+---6/7/2017---
+
+Firstly, I tried to get rid of nfs, doing write operation in the mountpoint of backend directly, to see if there is any memory leak. I created 500 files and each file is 1MB and memory leak happened.
+
+Then I tried to do write operation in the glusterfs mountpoint (cache dir of s3ql) directly. No memory leak detected.
+
+So I guess the memory leak is most likely caused by s3ql working with glusterfs. To be specific, the problem is most likely caused by s3ql writing cache in gluster mountpoint. Thus, I am going to find out how s3ql write cache file.
+
+I noticed that s3ql will create a lot of file descriptor. For each inodeno-blockno, there will be a corresponding CacheEntry and each CacheEntry object has an attribute fh (file handler), which is the return value of the system call open(). So I am going to limit the number of opened file descriptor and check if memory leak still happens. The modified mount command is:
+	
+	$ mount.s3ql --backend-options no-ssl --cachedir /root/.s3ql --nfs --compress none --max-cache-entries 50 swift://10.2.68.85:8080/s3ql /mnt/s3ql
+
+*** It seems that the memory leak problem can be solved by limit the # of cache entries. So this problem may be caused by the overhead of glusterfs for file descriptors.
+
+To verify the relation between # of fd and memory usage, we decided to conduct the following experiemnts:
+	
+	1.	write several hundred files to backend, when the memory usage goes up, kill the s3ql process and see if the memory usage drops. 
+	[I wrote 900 files to backend via nfs, the memory usage of server increased to 800MB. After writing, I killed mount.s3ql and the memory usage dropped to 220MB in a few seconds]
+	2.	limit the # of fd to 0, see if the system still works
+	[The system works, but the # of cache is actually 1, not 0]
+	3.	move .db back to the cache folder, see if the system still works fine
+	[]
+
+*************Here are some notes about s3ql********************
+
+cached block is read/write directly by *CacheEntry* and CacheEntry is stored by object *BlockCache*
+
+---6/8/2017---
+
+Today, I am going to firstly test if the system works well with .db file stored in the cache folder. The test works well.
+
+Mariadb installation:
+
+	$ apt-get install software-properties-common
+	$ apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+	$ apt-get update
+	$ apt-get install mariadb-server
+
+	Edit my.cnf file: 
+
+		$ vim /etc/mysql/my.conf
+		set bind-address=YOUT-SERVER-IP
+
+	Grant acces to remote IP address:
+
+		mysql> CREATE USER 'USER_NAME'@'HOST' IDENTIFIED BY 'PASSWORD';
+		mysql> GRANT ALL PRIVILEGES ON TABLE_NAME.* TO 'USER_NAME'@'HOST';
+
+Mariadb client installation:
+
+	$ apt-get install mariadb-client-5.5
+	$ pip3 install PyMySQL
+
+---6/9/2017---
+
+I changed the python-mysql connector to mysql-connector-python. The package need to be download from 
+	
+	https://dev.mysql.com/downloads/connector/python
+
+Install mysql-connector-python using pip:
+
+	$ pip3 install mysql-connector-python
+
+Today, I am going to modify the source code of s3ql, making it uses a remote database instead of using a local database. To make this happen, I need to modify the following files:
+
+	1.	database.py
+
+		modified code are labeled.
+
+		in getsize(): Instead of checking the local db file size, we have to do a query to check the remote db size:
+
+			SELECT table_schema "database_name", sum(data_length+index_length)/1024
+			FROM information_schema.tables
+			WHERE table_schema = "here is our db name"
+
+---6/10/2017---
+
+Things to do:
+
+	1.	read s3ql code
+	2.	learn python coding style
+	3.	learn how to use git
+
+Continue modifing s3ql code.
+
+fsck.py check():
+	
+	107:            # self.check_foreign_keys()		# commented this line
+
+database.py:
+	
+	124:			# self.conn.cursor().execute(*a, **kw)
+			        # return self.changes()
+
+			        cur = self.conn.cursor()
+			        cur.execute(*a, **kw)
+			        return cur.rowcount
+
+metadata.py:
+
+	177:			CREATE TABLE blocks (
+				        id        INTEGER PRIMARY KEY,
+				        rowid     INTEGER AUTOINCREMENT,		# added a new col
+				        hash      BLOB(16) UNIQUE,
+				        refcount  INT,
+				        size      INT NOT NULL,
+				        obj_id    INTEGER NOT NULL REFERENCES objects(id)
+				    )""")
+
+	226:    		conn.execute("""
+					    CREATE TABLE names (
+					        id     INTEGER PRIMARY KEY,
+					        rowid  INTEGER AUTOINCREMENT,		# added a new col
+					        name   BLOB NOT NULL,
+					        refcount  INT NOT NULL,
+					        UNIQUE (name)
+					    )""")
+
+	changed AUTOINCREMENT to AUTO_INCREMENT
+
+Every block is stored as an individual object in the backend, and the mapping from inodes to blocks and from blocks to objects is stored in the database.
+
+Problem:
+	
+	Connection.rowid(*a, **kw) doesn't have corresponding interface in mysql.
+
+Solution:
+	
+	Add an autoincrement row for each table. And we can obtain the autoincrement id by 'SELECT LAST_INSERT_ID()'
+
+
+		
