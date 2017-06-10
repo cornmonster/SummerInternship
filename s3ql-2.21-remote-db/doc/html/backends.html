@@ -1,0 +1,469 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Storage Backends &mdash; S3QL 2.21 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.21',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="top" title="S3QL 2.21 documentation" href="index.html" />
+    <link rel="next" title="Important Rules to Avoid Losing Data" href="durability.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="durability.html" title="Important Rules to Avoid Losing Data"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S3QL 2.21 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About S3QL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Storage Backends</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#google-storage">Google Storage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#amazon-s3">Amazon S3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#openstack-swift">OpenStack/Swift</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rackspace-cloudfiles">Rackspace CloudFiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#s3-compatible">S3 compatible</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local">Local</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="durability.html">Important Rules to Avoid Losing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mkfs.html">File System Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adm.html">Managing File Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mount.html">Mounting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="special.html">Advanced S3QL Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="umount.html">Unmounting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fsck.html">Checking for Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authinfo.html">Storing Authentication Information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">Contributed Programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips &amp; Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="issues.html">Known Issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="man/index.html">Manpages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Further Resources / Getting Help</a></li>
+<li class="toctree-l1"><a class="reference internal" href="impl_details.html">Implementation Details</a></li>
+</ul>
+
+          
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="storage-backends">
+<span id="id1"></span><h1>Storage Backends<a class="headerlink" href="#storage-backends" title="Permalink to this headline">¶</a></h1>
+<p>S3QL supports different <em>backends</em> to store data at different service
+providers and using different protocols. A <em>storage url</em> specifies a
+backend together with some backend-specific information and uniquely
+identifies an S3QL file system. The form of the storage url depends on
+the backend and is described for every backend below.</p>
+<p>Furthermore, every S3QL commands that accepts a storage url also
+accepts a <tt class="cmdopt docutils literal"><span class="pre">--backend-options</span></tt> parameter than can be used to
+pass backend-specific options to the backend module. The available
+options are documented with the respective backends below.</p>
+<p>All storage backends respect the <tt class="xref std std-envvar docutils literal"><span class="pre">http_proxy</span></tt> (for plain HTTP
+connections) and <tt class="xref std std-envvar docutils literal"><span class="pre">https_proxy</span></tt> (for SSL connections)
+environment variables.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Storage backends are not necessarily compatible. Don&#8217;t expect that
+you can e.g. copy the data stored by the local backend into Amazon
+S3 using some non-S3QL tool and then access it with S3QL&#8217;s S3
+backend. If you want to copy file systems from one backend to
+another, you need to use the <tt class="file docutils literal"><span class="pre">clone_fs.py</span></tt> script (from the
+<tt class="file docutils literal"><span class="pre">contrib</span></tt> directory in the S3QL tarball).</p>
+</div>
+<div class="section" id="google-storage">
+<h2>Google Storage<a class="headerlink" href="#google-storage" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://code.google.com/apis/storage/">Google Storage</a> is an online
+storage service offered by Google. To use the Google Storage backend,
+you need to have (or sign up for) a Google account, and then <a class="reference external" href="http://code.google.com/apis/storage/docs/signup.html">activate
+Google Storage</a>
+for your account. The account is free, you will pay only for the
+amount of storage and traffic that you actually use. There are two
+ways to access Google storage:</p>
+<ol class="arabic simple">
+<li>Use S3-like authentication. To do this, first <a class="reference external" href="https://developers.google.com/storage/docs/migrating#defaultproj">set a  default
+project</a>.
+Then use the <a class="reference external" href="https://code.google.com/apis/console/#:storage:legacy">key management tool</a> to
+retrieve your <em>Google Storage developer access key</em> and <em>Google
+Storage developer secret</em> and use that as backend login and backend
+password.</li>
+<li>Use OAuth2 authentication. In this case you need to use <tt class="docutils literal"><span class="pre">oauth2</span></tt>
+as the backend login, and a valid OAuth2 refresh token as the
+backend password. To obtain a refresh token, you can use the
+<a class="reference internal" href="man/oauth_client.html#oauth-client"><em>s3ql_oauth_client</em></a> program. It will instruct
+you to open a specific URL in your browser, enter a code and
+authenticate with your Google account. Once this procedure is
+complete, <a class="reference internal" href="man/oauth_client.html#oauth-client"><em>s3ql_oauth_client</em></a> will print out
+the refresh token. Note that you need to do this procedure only
+once, the refresh token will remain valid until you explicitly
+revoke it.</li>
+</ol>
+<p>To create a Google Storage bucket, you can use e.g. the <a class="reference external" href="https://sandbox.google.com/storage/">Google
+Storage Manager</a>. The storage URL for accessing the bucket in S3QL is
+then</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">gs://</span><span class="nv">&lt;bucketname&gt;</span><span class="l">/</span><span class="nv">&lt;prefix&gt;</span><span class="l"></span>
+</pre></div>
+</div>
+<p>Here <em>bucketname</em> is the name of the bucket, and <em>prefix</em> can be an
+arbitrary prefix that will be prepended to all object names used by
+S3QL. This allows you to store several S3QL file systems in the same
+Google Storage bucket.</p>
+<p>The Google Storage backend accepts the following backend options:</p>
+<dl class="option">
+<dt id="cmdoption-gs_backend-arg-no-ssl">
+<tt class="descname">no-ssl</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-gs_backend-arg-no-ssl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable encrypted (https) connections and use plain HTTP instead.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-gs_backend-arg-ssl-ca-path">
+<tt class="descname">ssl-ca-path</tt><tt class="descclassname">=&lt;path&gt;</tt><a class="headerlink" href="#cmdoption-gs_backend-arg-ssl-ca-path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instead of using the system&#8217;s default certificate store, validate
+the server certificate against the specified CA
+certificates. <tt class="var docutils literal"><span class="pre">&lt;path&gt;</span></tt> may be either a file containing
+multiple certificates, or a directory containing one certificate
+per file.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-gs_backend-arg-tcp-timeout">
+<tt class="descname">tcp-timeout</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-gs_backend-arg-tcp-timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the timeout used for TCP connections. If no data can be
+exchanged with the remote server for longer than this period, the
+TCP connection is closed and re-established (default: 20 seconds).</p>
+</dd></dl>
+
+</div>
+<div class="section" id="amazon-s3">
+<h2>Amazon S3<a class="headerlink" href="#amazon-s3" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://aws.amazon.com/s3">Amazon S3</a> is the online storage service
+offered by <a class="reference external" href="http://aws.amazon.com/">Amazon Web Services (AWS)</a>. To
+use the S3 backend, you first need to sign up for an AWS account. The
+account is free, you will pay only for the amount of storage and
+traffic that you actually use. After that, you need to create a bucket
+that will hold the S3QL file system, e.g. using the <a class="reference external" href="https://console.aws.amazon.com/s3/home">AWS Management
+Console</a>. For best
+performance, it is recommend to create the bucket in the
+geographically closest storage region, but not the US Standard region
+(see <a class="reference internal" href="durability.html#durability"><em>Important Rules to Avoid Losing Data</em></a> for the reason).</p>
+<p>The storage URL for accessing S3 buckets in S3QL has the form</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">s3://</span><span class="nv">&lt;bucketname&gt;</span><span class="l">/</span><span class="nv">&lt;prefix&gt;</span><span class="l"></span>
+</pre></div>
+</div>
+<p>Here <em>bucketname</em> is the name of the bucket, and <em>prefix</em> can be an
+arbitrary prefix that will be prepended to all object names used by
+S3QL. This allows you to store several S3QL file systems in the same
+S3 bucket.</p>
+<p>Note that the backend login and password for accessing S3 are not the
+user id and password that you use to log into the Amazon Webpage, but
+the <em>AWS access key id</em> and <em>AWS secret access key</em> shown under <a class="reference external" href="https://aws-portal.amazon.com/gp/aws/developer/account/index.html?ie=UTF8&amp;action=access-key">My
+Account/Access Identifiers</a>.</p>
+<p>The Amazon S3 backend accepts the following backend options:</p>
+<dl class="option">
+<dt id="cmdoption-s3_backend-arg-no-ssl">
+<tt class="descname">no-ssl</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3_backend-arg-no-ssl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable encrypted (https) connections and use plain HTTP instead.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3_backend-arg-ssl-ca-path">
+<tt class="descname">ssl-ca-path</tt><tt class="descclassname">=&lt;path&gt;</tt><a class="headerlink" href="#cmdoption-s3_backend-arg-ssl-ca-path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instead of using the system&#8217;s default certificate store, validate
+the server certificate against the specified CA
+certificates. <tt class="var docutils literal"><span class="pre">&lt;path&gt;</span></tt> may be either a file containing
+multiple certificates, or a directory containing one certificate
+per file.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3_backend-arg-tcp-timeout">
+<tt class="descname">tcp-timeout</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3_backend-arg-tcp-timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the timeout used for TCP connections. If no data can be
+exchanged with the remote server for longer than this period, the
+TCP connection is closed and re-established (default: 20 seconds).</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3_backend-arg-sse">
+<tt class="descname">sse</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3_backend-arg-sse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable server side encryption. Both costs &amp; benefits of S3 server
+side encryption are probably rather small, and this option does
+<em>not</em> affect any client side encryption performed by S3QL itself.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3_backend-arg-ia">
+<tt class="descname">ia</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3_backend-arg-ia" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use infrequent access storage class for new objects.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3_backend-arg-rrs">
+<tt class="descname">rrs</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3_backend-arg-rrs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable reduced redundancy storage for newly created objects
+(overwrites the <em>ia</em> option).</p>
+<p>When enabling this option, it is strongly recommended to
+periodically run <a class="reference internal" href="fsck.html#s3ql-verify"><em>s3ql_verify</em></a>, because objects
+that are lost by the storage backend may cause subsequent data loss
+even later in time due to the data de-duplication feature of S3QL (see
+<a class="reference internal" href="durability.html#backend-reliability"><em>Data Durability</em></a> for details).</p>
+</dd></dl>
+
+</div>
+<div class="section" id="openstack-swift">
+<span id="openstack-backend"></span><h2>OpenStack/Swift<a class="headerlink" href="#openstack-swift" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://www.openstack.org/">OpenStack</a> is an open-source cloud server application suite. <a class="reference external" href="http://openstack.org/projects/storage/">Swift</a> is
+the cloud storage module of OpenStack. Swift/OpenStack storage is
+offered by many different companies.</p>
+<p>There are two different storage URL for the OpenStack backend that
+make use of different authentication APIs. For legacy (v1)
+authentication, the storage URL is</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">swift://</span><span class="nv">&lt;hostname&gt;</span><span class="ge">[:&lt;port&gt;]</span><span class="l">/</span><span class="nv">&lt;container&gt;</span><span class="ge">[/&lt;prefix&gt;]</span><span class="l"></span>
+</pre></div>
+</div>
+<p>for keystore (v2) authentication, the storage URL is</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">swiftks://</span><span class="nv">&lt;hostname&gt;</span><span class="ge">[:&lt;port&gt;]</span><span class="l">/</span><span class="nv">&lt;region&gt;</span><span class="l">:</span><span class="nv">&lt;container&gt;</span><span class="ge">[/&lt;prefix&gt;]</span><span class="l"></span>
+</pre></div>
+</div>
+<p>Note that when using keystore authentication, you can (and have to)
+specify the storage region of the container as well.</p>
+<p>In both cases, <em>hostname</em> name should be the name of the
+authentication server.  The storage container must already exist (most
+OpenStack providers offer either a web frontend or a command line tool
+for creating containers). <em>prefix</em> can be an arbitrary prefix that
+will be prepended to all object names used by S3QL, which can be used
+to store multiple S3QL file systems in the same container.</p>
+<p>When using legacy authentication, the backend login and password
+correspond to the OpenStack username and API Access Key. When using
+keystore authentication, the backend password is your regular
+OpenStack password and the backend login combines you OpenStack
+username and tenant name in the form <tt class="docutils literal"><span class="pre">&lt;tenant&gt;:&lt;user&gt;</span></tt>. If no tenant
+is required, the OpenStack username alone may be used as backend
+login.</p>
+<p>The OpenStack backend accepts the following backend options:</p>
+<dl class="option">
+<dt id="cmdoption-swift_backend-arg-no-ssl">
+<tt class="descname">no-ssl</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-swift_backend-arg-no-ssl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use plain HTTP to connect to the authentication server. This option
+does not directly affect the connection to the storage
+server. Whether HTTPS or plain HTTP is used to connect to the
+storage server is determined by the authentication server.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-swift_backend-arg-ssl-ca-path">
+<tt class="descname">ssl-ca-path</tt><tt class="descclassname">=&lt;path&gt;</tt><a class="headerlink" href="#cmdoption-swift_backend-arg-ssl-ca-path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instead of using the system&#8217;s default certificate store, validate
+the server certificate against the specified CA
+certificates. <tt class="var docutils literal"><span class="pre">&lt;path&gt;</span></tt> may be either a file containing
+multiple certificates, or a directory containing one certificate
+per file.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-swift_backend-arg-tcp-timeout">
+<tt class="descname">tcp-timeout</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-swift_backend-arg-tcp-timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the timeout used for TCP connections. If no data can be
+exchanged with the remote server for longer than this period, the
+TCP connection is closed and re-established (default: 20 seconds).</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-swift_backend-arg-disable-expect100">
+<tt class="descname">disable-expect100</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-swift_backend-arg-disable-expect100" title="Permalink to this definition">¶</a></dt>
+<dd><p>If this option is specified, S3QL does not use the <tt class="docutils literal"><span class="pre">Expect:</span>
+<span class="pre">continue</span></tt> header (cf. <a class="reference external" href="http://tools.ietf.org/html/rfc2616#section-8.2.3">RFC2616, section 8.2.3</a>) when uploading
+data to the server. This can be used to work around broken storage
+servers that don&#8217;t fully support HTTP 1.1, but may decrease
+performance as object data will be transmitted to the server more
+than once in some circumstances.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="rackspace-cloudfiles">
+<h2>Rackspace CloudFiles<a class="headerlink" href="#rackspace-cloudfiles" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://www.rackspace.com/">Rackspace</a> CloudFiles uses <a class="reference external" href="http://www.openstack.org/">OpenStack</a> internally, so it is possible to
+just use the OpenStack/Swift backend (see above) with
+<tt class="docutils literal"><span class="pre">auth.api.rackspacecloud.com</span></tt> as the host name. For convenince,
+there is also a special <tt class="docutils literal"><span class="pre">rackspace</span></tt> backend that uses a storage URL
+of the form</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">rackspace://</span><span class="nv">&lt;region&gt;</span><span class="l">/</span><span class="nv">&lt;container&gt;</span><span class="ge">[/&lt;prefix&gt;]</span><span class="l"></span>
+</pre></div>
+</div>
+<p>The storage container must already exist in the selected
+region. <em>prefix</em> can be an arbitrary prefix that will be prepended to
+all object names used by S3QL and can be used to store several S3QL
+file systems in the same container.</p>
+<p>You can create a storage container for S3QL using the <a class="reference external" href="https://mycloud.rackspace.com/">Cloud Control
+Panel</a> (click on <em>Files</em> in the
+topmost menu bar).</p>
+<p>The Rackspace backend accepts the same backend options as the
+<a class="reference internal" href="#openstack-backend"><em>OpenStack backend</em></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">As of January 2012, Rackspace does not give any durability or
+consistency guarantees (see <a class="reference internal" href="durability.html#durability"><em>Important Rules to Avoid Losing Data</em></a> for why this is
+important).  However, Rackspace support agents seem prone to claim
+very high guarantees.  Unless explicitly backed by their terms of
+service, any such statement should thus be viewed with
+suspicion. S3QL developers have also <a class="reference external" href="http://www.rath.org/Tales%20from%20the%20Rackspace%20Support">repeatedly experienced</a>
+similar issues with the credibility and competence of the Rackspace
+support.</p>
+</div>
+</div>
+<div class="section" id="s3-compatible">
+<h2>S3 compatible<a class="headerlink" href="#s3-compatible" title="Permalink to this headline">¶</a></h2>
+<p>The S3 compatible backend allows S3QL to access any storage service
+that uses the same protocol as Amazon S3. The storage URL has the form</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">s3c://</span><span class="nv">&lt;hostname&gt;</span><span class="l">:</span><span class="nv">&lt;port&gt;</span><span class="l">/</span><span class="nv">&lt;bucketname&gt;</span><span class="l">/</span><span class="nv">&lt;prefix&gt;</span><span class="l"></span>
+</pre></div>
+</div>
+<p>Here <em>bucketname</em> is the name of an (existing) bucket, and <em>prefix</em>
+can be an arbitrary prefix that will be prepended to all object names
+used by S3QL. This allows you to store several S3QL file systems in
+the same bucket.</p>
+<p>The S3 compatible backend accepts the following backend options:</p>
+<dl class="option">
+<dt id="cmdoption-s3c_backend-arg-no-ssl">
+<tt class="descname">no-ssl</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3c_backend-arg-no-ssl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disable encrypted (https) connections and use plain HTTP instead.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3c_backend-arg-ssl-ca-path">
+<tt class="descname">ssl-ca-path</tt><tt class="descclassname">=&lt;path&gt;</tt><a class="headerlink" href="#cmdoption-s3c_backend-arg-ssl-ca-path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instead of using the system&#8217;s default certificate store, validate
+the server certificate against the specified CA
+certificates. <tt class="var docutils literal"><span class="pre">&lt;path&gt;</span></tt> may be either a file containing
+multiple certificates, or a directory containing one certificate
+per file.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3c_backend-arg-tcp-timeout">
+<tt class="descname">tcp-timeout</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3c_backend-arg-tcp-timeout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specifies the timeout used for TCP connections. If no data can be
+exchanged with the remote server for longer than this period, the
+TCP connection is closed and re-established (default: 20 seconds).</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3c_backend-arg-disable-expect100">
+<tt class="descname">disable-expect100</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3c_backend-arg-disable-expect100" title="Permalink to this definition">¶</a></dt>
+<dd><p>If this option is specified, S3QL does not use the <tt class="docutils literal"><span class="pre">Expect:</span>
+<span class="pre">continue</span></tt> header (cf. <a class="reference external" href="http://tools.ietf.org/html/rfc2616#section-8.2.3">RFC2616, section 8.2.3</a>) when uploading
+data to the server. This can be used to work around broken storage
+servers that don&#8217;t fully support HTTP 1.1, but may decrease
+performance as object data will be transmitted to the server more
+than once in some circumstances.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-s3c_backend-arg-dumb-copy">
+<tt class="descname">dumb-copy</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-s3c_backend-arg-dumb-copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>If this option is specified, S3QL assumes that a COPY request to
+the storage server has succeeded as soon as the server returns a
+<tt class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></tt> status. The <a class="reference external" href="http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html">S3 COPY API</a> specifies that the
+storage server may still return an error in the request body (see
+the <a class="reference external" href="https://doc.s3.amazonaws.com/proposals/copy.html">copy proposal</a> for the rationale), so this
+option should only be used if you are certain that your storage
+server only returns <tt class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></tt> when the copy operation has been
+completely and successfully carried out. Using this option may be
+neccessary if your storage server does not return a valid response
+body for a succesfull copy operation.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="local">
+<h2>Local<a class="headerlink" href="#local" title="Permalink to this headline">¶</a></h2>
+<p>S3QL is also able to store its data on the local file system. This can
+be used to backup data on external media, or to access external
+services that S3QL can not talk to directly (e.g., it is possible to
+store data over SSH by first mounting the remote system using <a class="reference external" href="http://fuse.sourceforge.net/sshfs.html">sshfs</a>
+and then using the local backend to store the data in the sshfs
+mountpoint).</p>
+<p>The storage URL for local storage is</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">local://</span><span class="nv">&lt;path&gt;</span><span class="l"></span>
+</pre></div>
+</div>
+<p>Note that you have to write three consecutive slashes to specify an
+absolute path, e.g. <tt class="docutils literal"><span class="pre">local:///var/archive</span></tt>. Also, relative paths will
+automatically be converted to absolute paths before the authentication
+file (see <a class="reference internal" href="authinfo.html#authinfo"><em>Storing Authentication Information</em></a>) is read, i.e. if you are in the
+<tt class="docutils literal"><span class="pre">/home/john</span></tt> directory and try to mount <tt class="docutils literal"><span class="pre">local://s3ql</span></tt>, the
+corresponding section in the authentication file must match the
+storage url <tt class="docutils literal"><span class="pre">local:///home/john/s3ql</span></tt>.</p>
+<p>The local backend does not accept any backend options.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="durability.html" title="Important Rules to Avoid Losing Data"
+             >next</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">S3QL 2.21 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright © 2008 Nikolaus Rath &lt;Nikolaus@rath.org&gt;.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
