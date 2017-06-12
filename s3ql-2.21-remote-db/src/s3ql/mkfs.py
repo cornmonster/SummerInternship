@@ -144,13 +144,14 @@ def main(args=None):
 
     # There can't be a corresponding backend, so we can safely delete
     # these files.
-    if os.path.exists(cachepath + '.db'):
-        os.unlink(cachepath + '.db')
+    # if os.path.exists(cachepath + '.db'):
+    #     os.unlink(cachepath + '.db')
     if os.path.exists(cachepath + '-cache'):
         shutil.rmtree(cachepath + '-cache')
 
     log.info('Creating metadata tables...')
-    db = Connection(cachepath + '.db')
+    # db = Connection(cachepath + '.db')
+    db = Connection()
     create_tables(db)
     init_tables(db)
 

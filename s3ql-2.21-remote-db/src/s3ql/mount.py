@@ -251,7 +251,8 @@ def main(args=None):
                       'refusing to overwrite!', seq_no, param['seq_no'])
             log.error('The locally cached metadata will be *lost* the next time the file system '
                       'is mounted or checked and has therefore been backed up.')
-            for name in (cachepath + '.params', cachepath + '.db'):
+            # for name in (cachepath + '.params', cachepath + '.db'):
+            for name in (cachepath + '.params',)
                 for i in range(4)[::-1]:
                     if os.path.exists(name + '.%d' % i):
                         os.rename(name + '.%d' % i, name + '.%d' % (i + 1))

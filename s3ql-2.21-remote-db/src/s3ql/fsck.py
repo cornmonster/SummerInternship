@@ -58,6 +58,8 @@ class Fsck(object):
         # don't move them there repeatedly)
         self.moved_inodes = set()
 
+
+
     def check(self):
         """Check file system
 
@@ -134,7 +136,7 @@ class Fsck(object):
 
         Using mysql as remote database, we will not disable foreign key constrain.
         So we don't actually need to run this method.
-        
+
         '''
 
         log.info("Checking referential integrity...")
@@ -1055,8 +1057,9 @@ class ROFsck(Fsck):
 
     def __init__(self, path):
 
-        db = Connection(path + '.db')
-        db.execute('PRAGMA journal_mode = WAL')
+        # db = Connection(path + '.db')
+        db = Connection()
+        # db.execute('PRAGMA journal_mode = WAL')
 
         param = load_params(path)
         super().__init__(None, None, param, db)
