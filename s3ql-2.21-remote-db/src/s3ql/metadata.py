@@ -20,50 +20,50 @@ import stat
 log = logging.getLogger(__name__)
 
 # Has to be kept in sync with create_tables()!
-DUMP_SPEC = [
-             ('objects', 'id', (('id', INTEGER, 1),
-                                ('size', INTEGER),
-                                ('refcount', INTEGER))),
+# DUMP_SPEC = [
+#              ('objects', 'id', (('id', INTEGER, 1),
+#                                 ('size', INTEGER),
+#                                 ('refcount', INTEGER))),
 
-             ('blocks', 'id', (('id', INTEGER, 1),
-                             ('hash', BLOB, 32),
-                             ('size', INTEGER),
-                             ('obj_id', INTEGER, 1),
-                             ('refcount', INTEGER))),
+#              ('blocks', 'id', (('id', INTEGER, 1),
+#                              ('hash', BLOB, 32),
+#                              ('size', INTEGER),
+#                              ('obj_id', INTEGER, 1),
+#                              ('refcount', INTEGER))),
 
-             ('inodes', 'id', (('id', INTEGER, 1),
-                               ('uid', INTEGER),
-                               ('gid', INTEGER),
-                               ('mode', INTEGER),
-                               ('mtime_ns', INTEGER),
-                               ('atime_ns', INTEGER),
-                               ('ctime_ns', INTEGER),
-                               ('size', INTEGER),
-                               ('rdev', INTEGER),
-                               ('locked', INTEGER),
-                               ('refcount', INTEGER))),
+#              ('inodes', 'id', (('id', INTEGER, 1),
+#                                ('uid', INTEGER),
+#                                ('gid', INTEGER),
+#                                ('mode', INTEGER),
+#                                ('mtime_ns', INTEGER),
+#                                ('atime_ns', INTEGER),
+#                                ('ctime_ns', INTEGER),
+#                                ('size', INTEGER),
+#                                ('rdev', INTEGER),
+#                                ('locked', INTEGER),
+#                                ('refcount', INTEGER))),
 
-             ('inode_blocks', 'inode, blockno',
-              (('inode', INTEGER),
-               ('blockno', INTEGER, 1),
-               ('block_id', INTEGER, 1))),
+#              ('inode_blocks', 'inode, blockno',
+#               (('inode', INTEGER),
+#                ('blockno', INTEGER, 1),
+#                ('block_id', INTEGER, 1))),
 
-             ('symlink_targets', 'inode', (('inode', INTEGER, 1),
-                                           ('target', BLOB))),
+#              ('symlink_targets', 'inode', (('inode', INTEGER, 1),
+#                                            ('target', BLOB))),
 
-             ('names', 'id', (('id', INTEGER, 1),
-                              ('name', BLOB),
-                              ('refcount', INTEGER))),
+#              ('names', 'id', (('id', INTEGER, 1),
+#                               ('name', BLOB),
+#                               ('refcount', INTEGER))),
 
-             ('contents', 'parent_inode, name_id',
-              (('name_id', INTEGER, 1),
-               ('inode', INTEGER, 1),
-               ('parent_inode', INTEGER))),
+#              ('contents', 'parent_inode, name_id',
+#               (('name_id', INTEGER, 1),
+#                ('inode', INTEGER, 1),
+#                ('parent_inode', INTEGER))),
 
-             ('ext_attributes', 'inode', (('inode', INTEGER),
-                                          ('name_id', INTEGER),
-                                          ('value', BLOB))),
-]
+#              ('ext_attributes', 'inode', (('inode', INTEGER),
+#                                           ('name_id', INTEGER),
+#                                           ('value', BLOB))),
+# ]
 
 
 
@@ -170,7 +170,7 @@ def create_tables(conn):
         id        INTEGER PRIMARY KEY AUTO_INCREMENT,
         refcount  INT NOT NULL,
         size      INT NOT NULL
-    )""")
+    );""")
 
     # Table of known data blocks
     # Refcount is included for performance reasons
@@ -178,11 +178,11 @@ def create_tables(conn):
     CREATE TABLE blocks (
         id        INTEGER PRIMARY KEY,
         rowid     INTEGER AUTO_INCREMENT,
-        hash      BLOB(16) UNIQUE,
+        hash      VARCHAR(64) UNIQUE,
         refcount  INT,
         size      INT NOT NULL,
         obj_id    INTEGER NOT NULL REFERENCES objects(id)
-    )""")
+    );""")
 
     # Table with filesystem metadata
     # The number of links `refcount` to an inode can in theory
@@ -204,7 +204,7 @@ def create_tables(conn):
         size      INT NOT NULL DEFAULT 0,
         rdev      INT NOT NULL DEFAULT 0,
         locked    BOOLEAN NOT NULL DEFAULT 0
-    )""")
+    );""")
 
     # Further Blocks used by inode (blockno >= 1)
     conn.execute("""
@@ -213,14 +213,14 @@ def create_tables(conn):
         blockno   INT NOT NULL,
         block_id    INTEGER NOT NULL REFERENCES blocks(id),
         PRIMARY KEY (inode, blockno)
-    )""")
+    );""")
 
     # Symlinks
     conn.execute("""
     CREATE TABLE symlink_targets (
         inode     INTEGER PRIMARY KEY REFERENCES inodes(id),
         target    BLOB NOT NULL
-    )""")
+    );""")
 
     # Names of file system objects
     conn.execute("""
@@ -230,7 +230,7 @@ def create_tables(conn):
         name   BLOB NOT NULL,
         refcount  INT NOT NULL,
         UNIQUE (name)
-    )""")
+    );""")
 
     # Table of filesystem objects
     # rowid is used by readdir() to restart at the correct position
@@ -242,7 +242,7 @@ def create_tables(conn):
         parent_inode INT NOT NULL REFERENCES inodes(id),
 
         UNIQUE (parent_inode, name_id)
-    )""")
+    );""")
 
     # Extended attributes
     conn.execute("""
@@ -252,16 +252,16 @@ def create_tables(conn):
         value     BLOB NOT NULL,
 
         PRIMARY KEY (inode, name_id)
-    )""")
+    );""")
 
     # Shortcuts
     conn.execute("""
     CREATE VIEW contents_v AS
-    SELECT * FROM contents JOIN names ON names.id = name_id
+    SELECT * FROM contents JOIN names ON names.id = name_id;
     """)
     conn.execute("""
     CREATE VIEW ext_attributes_v AS
-    SELECT * FROM ext_attributes JOIN names ON names.id = name_id
+    SELECT * FROM ext_attributes JOIN names ON names.id = name_id;
     """)
 
 def stream_write_bz2(ifh, ofh):

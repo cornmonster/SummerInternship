@@ -132,7 +132,7 @@ class Connection(object):
 
         cur = self.conn.cursor()
         cur.execute(*a, **kw)
-        self.conn.sommit()
+        self.conn.commit()
         return cur.rowcount
 
     # *need to be modified*: mysql doesn't provide rowid. So we have to use
