@@ -176,8 +176,7 @@ def create_tables(conn):
     # Refcount is included for performance reasons
     conn.execute("""
     CREATE TABLE blocks (
-        id        INTEGER PRIMARY KEY,
-        rowid     INTEGER AUTO_INCREMENT,
+        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
         hash      VARCHAR(64) UNIQUE,
         refcount  INT,
         size      INT NOT NULL,
@@ -225,8 +224,7 @@ def create_tables(conn):
     # Names of file system objects
     conn.execute("""
     CREATE TABLE names (
-        id     INTEGER PRIMARY KEY,
-        rowid  INTEGER AUTO_INCREMENT,
+        id     INTEGER PRIMARY KEY AUTO_INCREMENT,
         name   BLOB NOT NULL,
         refcount  INT NOT NULL,
         UNIQUE (name)
