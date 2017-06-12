@@ -14,48 +14,48 @@ Module Attributes:
 '''
 
 from .logging import logging, QuietError # Ensure use of custom logger class
-import mysql
+import pymysql
 import os
 
 log = logging.getLogger(__name__)
 
 # *modified*: comments are added
 # most of commands in initsql are not necessary when using a mysql database.
-initsql = (
-           # WAL mode causes trouble with e.g. copy_tree, so we don't use it at the moment
-           # (cf. http://article.gmane.org/gmane.comp.db.sqlite.general/65243).
-           # However, if we start using it we must initiaze it *before* setting
-           # locking_mode to EXCLUSIVE, otherwise we can't switch the locking
-           # mode without first disabling WAL.
+# initsql = (
+#            # WAL mode causes trouble with e.g. copy_tree, so we don't use it at the moment
+#            # (cf. http://article.gmane.org/gmane.comp.db.sqlite.general/65243).
+#            # However, if we start using it we must initiaze it *before* setting
+#            # locking_mode to EXCLUSIVE, otherwise we can't switch the locking
+#            # mode without first disabling WAL.
 
-           # synchronous pragma sets the current disk synchronization mode, which controls
-           # how aggressively SQLite will write data all the way out to physical storage.
-           # Setting Pragma synchronous to OFF means no syncs at all.
-           'PRAGMA synchronous = OFF',
-           # journal_mode pragma controls how the journal file is stored and processed.
-           # Setting Pragma journal_mode to OFF means no journal record is kept.
-           'PRAGMA journal_mode = OFF',
+#            # synchronous pragma sets the current disk synchronization mode, which controls
+#            # how aggressively SQLite will write data all the way out to physical storage.
+#            # Setting Pragma synchronous to OFF means no syncs at all.
+#            'PRAGMA synchronous = OFF',
+#            # journal_mode pragma controls how the journal file is stored and processed.
+#            # Setting Pragma journal_mode to OFF means no journal record is kept.
+#            'PRAGMA journal_mode = OFF',
 
-           #'PRAGMA synchronous = NORMAL',
-           #'PRAGMA journal_mode = WAL',
+#            #'PRAGMA synchronous = NORMAL',
+#            #'PRAGMA journal_mode = WAL',
 
-           # foreign_keys pragma disables foreign key constrain
-           'PRAGMA foreign_keys = OFF',
-           # locking_mode pragma being set to EXCLUSIVE means the connection will not release
-           # the lock until the end of the connection. 
-           'PRAGMA locking_mode = EXCLUSIVE',
-           # This may be a typo, it should be recursive_triggers. This pragma enables recursive
-           # triggers.
-           'PRAGMA recursize_triggers = on',
-           # This pragma sets the page size of the database.
-           'PRAGMA page_size = 4096',
-           # This pragma sets write-ahead log auto-checkpoint interval.
-           'PRAGMA wal_autocheckpoint = 25000',
-           # This pragma makes temporary tables and indices stored in a file.
-           'PRAGMA temp_store = FILE',
-           # This pragma is off, new databases are created using the latest file format.
-           'PRAGMA legacy_file_format = off',
-           )
+#            # foreign_keys pragma disables foreign key constrain
+#            'PRAGMA foreign_keys = OFF',
+#            # locking_mode pragma being set to EXCLUSIVE means the connection will not release
+#            # the lock until the end of the connection. 
+#            'PRAGMA locking_mode = EXCLUSIVE',
+#            # This may be a typo, it should be recursive_triggers. This pragma enables recursive
+#            # triggers.
+#            'PRAGMA recursize_triggers = on',
+#            # This pragma sets the page size of the database.
+#            'PRAGMA page_size = 4096',
+#            # This pragma sets write-ahead log auto-checkpoint interval.
+#            'PRAGMA wal_autocheckpoint = 25000',
+#            # This pragma makes temporary tables and indices stored in a file.
+#            'PRAGMA temp_store = FILE',
+#            # This pragma is off, new databases are created using the latest file format.
+#            'PRAGMA legacy_file_format = off',
+#            )
 
 class Connection(object):
     '''
@@ -76,10 +76,10 @@ class Connection(object):
 
     # *modified*: changed the argument list and the way to handle the arguments
     def __init__(self):
-        self.conn = mysql.connector.connect(host='10.2.72.85',
-                                            user='user-002',
-                                            password='password',
-                                            db='S3QL')
+        self.conn = pymysql.connect(host='10.2.72.85',
+                                    user='user-002',
+                                    password='password',
+                                    db='S3QL')
 
     # def __init__(self, host, user, password, db):
     #     self.host = host
@@ -132,6 +132,7 @@ class Connection(object):
 
         cur = self.conn.cursor()
         cur.execute(*a, **kw)
+        self.conn.sommit()
         return cur.rowcount
 
     # *need to be modified*: mysql doesn't provide rowid. So we have to use
@@ -140,6 +141,7 @@ class Connection(object):
         """Execute SQL statement and return last inserted rowid"""
 
         self.conn.cursor().execute(*a, **kw)
+        self.conn.commit()
         # return self.conn.last_insert_rowid()
         sql = 'SELECT LAST_INSERT_ID()'
         return self.getval(sql)
