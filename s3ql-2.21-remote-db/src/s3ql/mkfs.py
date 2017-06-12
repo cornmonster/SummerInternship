@@ -13,7 +13,7 @@ from .backends import s3
 from .common import (get_backend_cachedir, get_backend, split_by_n,
                      freeze_basic_mapping, time_ns)
 from .database import Connection
-from .metadata import dump_and_upload_metadata, create_tables
+from .metadata import create_tables
 from .parse_args import ArgumentParser
 from getpass import getpass
 from base64 import b64encode
@@ -86,7 +86,7 @@ def main(args=None):
 
     options = parse_args(args)
     setup_logging(options)
-    
+
     if options.max_obj_size < 1024:
         # This warning should never be converrted to an exception
         log.warning('Maximum object sizes less than 1 MiB will degrade '
