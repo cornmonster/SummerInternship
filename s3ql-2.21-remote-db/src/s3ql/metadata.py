@@ -218,14 +218,14 @@ def create_tables(conn):
     conn.execute("""
     CREATE TABLE symlink_targets (
         inode     INTEGER PRIMARY KEY REFERENCES inodes(id),
-        target    BLOB NOT NULL
+        target    VARCHAR(255) NOT NULL
     );""")
 
     # Names of file system objects
     conn.execute("""
     CREATE TABLE names (
         id     INTEGER PRIMARY KEY AUTO_INCREMENT,
-        name   BLOB NOT NULL,
+        name   VARCHAR(255) NOT NULL,
         refcount  INT NOT NULL,
         UNIQUE (name)
     );""")
