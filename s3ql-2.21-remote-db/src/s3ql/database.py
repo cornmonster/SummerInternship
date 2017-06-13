@@ -180,13 +180,14 @@ class Connection(object):
         than one result row, raises `NoUniqueValueError`.
         """
 
-        res = self.conn.cursor().execute(*a, **kw)
+        cur = self.conn.cursor()
+        cur.execute(*a, **kw)
         try:
-            row = next(res)
+            row = cur.fetchone()
         except StopIteration:
             raise NoSuchRowError()
         try:
-            next(res)
+            cur.fetchone()
         except StopIteration:
             # Fine, we only wanted one row
             pass
