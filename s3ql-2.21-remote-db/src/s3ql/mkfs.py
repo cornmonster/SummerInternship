@@ -59,9 +59,9 @@ def init_tables(conn):
     now_ns = time_ns()
     conn.execute("INSERT INTO inodes (id,mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
                  "VALUES (%d,%d,%d,%d,%d,%d,%d,%d)",
-                   (ROOT_INODE, stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
-                   | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
-                    os.getuid(), os.getgid(), now_ns, now_ns, now_ns, 1))
+                   (int(ROOT_INODE), int(stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
+                   | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH),
+                    int(os.getuid()), int(os.getgid()), int(now_ns), int(now_ns), int(now_ns), 1))
 
     # Insert control inode, the actual values don't matter that much
     conn.execute("INSERT INTO inodes (id,mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
