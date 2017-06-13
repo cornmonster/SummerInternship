@@ -364,27 +364,28 @@ def get_metadata(backend, cachepath):
     '''Retrieve metadata'''
 
     seq_no = get_seq_no(backend)
-
+    print('backend sequence number: ' + str(seq_no))
     # Check for cached metadata
     db = Connection()
     if os.path.exists(cachepath + '.params'):
         param = load_params(cachepath)
-        if param['seq_no'] < seq_no:
-            log.info('Ignoring locally cached metadata (outdated).')
-            param = backend.lookup('s3ql_metadata')
-        elif param['seq_no'] > seq_no:
-            raise QuietError("File system not unmounted cleanly, run fsck!",
-                             exitcode=30)
-        else:
-            log.info('Using cached metadata.')
-            # db = Connection(cachepath + '.db')
+        print('local sequence number: ' + str(param['seq_no']))
+        # if param['seq_no'] < seq_no:
+        #     log.info('Ignoring locally cached metadata (outdated).')
+        #     param = backend.lookup('s3ql_metadata')
+        # elif param['seq_no'] > seq_no:
+        #     raise QuietError("File system not unmounted cleanly, run fsck!",
+        #                      exitcode=30)
+        # else:
+        #     log.info('Using cached metadata.')
+        #     # db = Connection(cachepath + '.db')
     else:
         param = backend.lookup('s3ql_metadata')
 
     # Check for unclean shutdown
-    if param['seq_no'] < seq_no:
-        raise QuietError('Backend reports that fs is still mounted elsewhere, aborting.',
-                         exitcode=31)
+    # if param['seq_no'] < seq_no:
+    #     raise QuietError('Backend reports that fs is still mounted elsewhere, aborting.',
+    #                      exitcode=31)
 
     # Check revision
     if param['revision'] < CURRENT_FS_REV:
