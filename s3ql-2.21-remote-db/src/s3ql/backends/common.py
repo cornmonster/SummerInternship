@@ -329,7 +329,7 @@ class AbstractBackend(object, metaclass=ABCMeta):
 
     @retry
     def perform_write(self, fn, key, metadata=None, is_compressed=False):
-        '''Read object data using *fn*, retry on temporary failure
+        '''Write object data using *fn*, retry on temporary failure
 
         Open object for writing, call `fn(fh)` and close object. If a temporary
         error (as defined by `is_temp_failure`) occurs during opening, closing

@@ -15,8 +15,8 @@ from .common import (get_backend_cachedir, get_seq_no, get_backend_factory,
 from .daemonize import daemonize
 from .database import Connection
 from .inode_cache import InodeCache
-from .metadata import (download_metadata, upload_metadata, dump_and_upload_metadata,
-                       dump_metadata)
+# from .metadata import (download_metadata, upload_metadata, dump_and_upload_metadata,
+#                        dump_metadata)
 from .parse_args import ArgumentParser
 from .exit_stack import ExitStack
 from threading import Thread
@@ -125,8 +125,8 @@ def main(args=None):
     cachepath = get_backend_cachedir(options.storage_url, options.cachedir)
 
     # Retrieve metadata
-    with backend_pool() as backend:
-        (param, db) = get_metadata(backend, cachepath)
+    # with backend_pool() as backend:
+    #     (param, db) = get_metadata(backend, cachepath)
 
     #if param['max_obj_size'] < options.min_obj_size:
     #    raise QuietError('Maximum object size must be bigger than minimum object size.',
@@ -155,10 +155,17 @@ def main(args=None):
     block_cache = BlockCache(backend_pool, db, cachepath + '-cache',
                              options.cachesize * 1024, options.max_cache_entries)
     commit_thread = CommitThread(block_cache)
+
+    # *modified*: Since we don't need to upload metadata any more
+    # operations = fs.Operations(block_cache, db, max_obj_size=param['max_obj_size'],
+    #                            inode_cache=InodeCache(db, param['inode_gen']),
+    #                            upload_event=metadata_upload_thread.event)
+
     operations = fs.Operations(block_cache, db, max_obj_size=param['max_obj_size'],
-                               inode_cache=InodeCache(db, param['inode_gen']),
-                               upload_event=metadata_upload_thread.event)
-    metadata_upload_thread.fs = operations
+                               inode_cache=InodeCache(db, param['inode_gen']), 
+                               upload_event=None)
+
+    # metadata_upload_thread.fs = operations
 
     with ExitStack() as cm:
         log.info('Mounting %s at %s...', options.storage_url, options.mountpoint)
@@ -231,48 +238,48 @@ def main(args=None):
 
     # Do not update .params yet, dump_metadata() may fail if the database is
     # corrupted, in which case we want to force an fsck.
-    param['max_inode'] = db.get_val('SELECT MAX(id) FROM inodes')
-    if operations.failsafe:
-        log.warning('File system errors encountered, marking for fsck.')
-        param['needs_fsck'] = True
-    with backend_pool() as backend:
-        seq_no = get_seq_no(backend)
-        if metadata_upload_thread.db_mtime == os.stat(cachepath + '.db').st_mtime:
-            log.info('File system unchanged, not uploading metadata.')
-            del backend['s3ql_seq_no_%d' % param['seq_no']]
-            param['seq_no'] -= 1
-            save_params(cachepath, param)
-        elif seq_no == param['seq_no']:
-            param['last-modified'] = time.time()
-            # dump_and_upload_metadata(backend, db, param)
-            save_params(cachepath, param)
-        else:
-            log.error('Remote metadata is newer than local (%d vs %d), '
-                      'refusing to overwrite!', seq_no, param['seq_no'])
-            log.error('The locally cached metadata will be *lost* the next time the file system '
-                      'is mounted or checked and has therefore been backed up.')
-            # for name in (cachepath + '.params', cachepath + '.db'):
-            for name in (cachepath + '.params',)
-                for i in range(4)[::-1]:
-                    if os.path.exists(name + '.%d' % i):
-                        os.rename(name + '.%d' % i, name + '.%d' % (i + 1))
-                os.rename(name, name + '.0')
+    # param['max_inode'] = db.get_val('SELECT MAX(id) FROM inodes')
+    # if operations.failsafe:
+    #     log.warning('File system errors encountered, marking for fsck.')
+    #     param['needs_fsck'] = True
+    # with backend_pool() as backend:
+    #     seq_no = get_seq_no(backend)
+    #     if metadata_upload_thread.db_mtime == os.stat(cachepath + '.db').st_mtime:
+    #         log.info('File system unchanged, not uploading metadata.')
+    #         del backend['s3ql_seq_no_%d' % param['seq_no']]
+    #         param['seq_no'] -= 1
+    #         save_params(cachepath, param)
+    #     elif seq_no == param['seq_no']:
+    #         param['last-modified'] = time.time()
+    #         # dump_and_upload_metadata(backend, db, param)
+    #         save_params(cachepath, param)
+    #     else:
+    #         log.error('Remote metadata is newer than local (%d vs %d), '
+    #                   'refusing to overwrite!', seq_no, param['seq_no'])
+    #         log.error('The locally cached metadata will be *lost* the next time the file system '
+    #                   'is mounted or checked and has therefore been backed up.')
+    #         # for name in (cachepath + '.params', cachepath + '.db'):
+    #         for name in (cachepath + '.params',)
+    #             for i in range(4)[::-1]:
+    #                 if os.path.exists(name + '.%d' % i):
+    #                     os.rename(name + '.%d' % i, name + '.%d' % (i + 1))
+    #             os.rename(name, name + '.0')
 
-    log.info('Cleaning up local metadata...')
-    db.execute('ANALYZE')
-    db.execute('VACUUM')
+    # log.info('Cleaning up local metadata...')
+    # db.execute('ANALYZE')
+    # db.execute('VACUUM')
     db.close()
 
-    if options.profile:
-        with tempfile.NamedTemporaryFile() as tmp, \
-            open('s3ql_profile.txt', 'w') as fh:
-            prof.dump_stats(tmp.name)
-            p = pstats.Stats(tmp.name, stream=fh)
-            p.strip_dirs()
-            p.sort_stats('cumulative')
-            p.print_stats(50)
-            p.sort_stats('time')
-            p.print_stats(50)
+    # if options.profile:
+    #     with tempfile.NamedTemporaryFile() as tmp, \
+    #         open('s3ql_profile.txt', 'w') as fh:
+    #         prof.dump_stats(tmp.name)
+    #         p = pstats.Stats(tmp.name, stream=fh)
+    #         p.strip_dirs()
+    #         p.sort_stats('cumulative')
+    #         p.print_stats(50)
+    #         p.sort_stats('time')
+    #         p.print_stats(50)
 
     log.info('All done.')
 
@@ -573,93 +580,93 @@ def parse_args(args):
     if options.upstart:
         options.fg = True
 
-    if options.metadata_upload_interval == 0:
-        options.metadata_upload_interval = None
+    # if options.metadata_upload_interval == 0:
+    #     options.metadata_upload_interval = None
 
     return options
 
-class MetadataUploadThread(Thread):
-    '''
-    Periodically upload metadata. Upload is done every `interval`
-    seconds, and whenever `event` is set. To terminate thread,
-    set `quit` attribute as well as `event` event.
+# class MetadataUploadThread(Thread):
+#     '''
+#     Periodically upload metadata. Upload is done every `interval`
+#     seconds, and whenever `event` is set. To terminate thread,
+#     set `quit` attribute as well as `event` event.
 
-    This class uses the llfuse global lock. When calling objects
-    passed in the constructor, the global lock is acquired first.
-    '''
+#     This class uses the llfuse global lock. When calling objects
+#     passed in the constructor, the global lock is acquired first.
+#     '''
 
-    def __init__(self, backend_pool, param, db, interval):
-        super().__init__()
-        self.backend_pool = backend_pool
-        self.param = param
-        self.db = db
-        self.interval = interval
-        self.daemon = True
-        self.db_mtime = os.stat(db.file).st_mtime
-        self.event = threading.Event()
-        self.quit = False
-        self.name = 'Metadata-Upload-Thread'
+#     def __init__(self, backend_pool, param, db, interval):
+#         super().__init__()
+#         self.backend_pool = backend_pool
+#         self.param = param
+#         self.db = db
+#         self.interval = interval
+#         self.daemon = True
+#         self.db_mtime = os.stat(db.file).st_mtime
+#         self.event = threading.Event()
+#         self.quit = False
+#         self.name = 'Metadata-Upload-Thread'
 
-        # Can't assign in constructor, because Operations instance needs
-        # access to self.event as well.
-        self.fs = None
+#         # Can't assign in constructor, because Operations instance needs
+#         # access to self.event as well.
+#         self.fs = None
 
-    def run(self):
-        log.debug('started')
+#     def run(self):
+#         log.debug('started')
 
-        assert self.fs is not None
+#         assert self.fs is not None
 
-        while not self.quit:
-            self.event.wait(self.interval)
-            self.event.clear()
+#         while not self.quit:
+#             self.event.wait(self.interval)
+#             self.event.clear()
 
-            if self.quit:
-                break
+#             if self.quit:
+#                 break
 
-            with llfuse.lock:
-                if self.quit:
-                    break
-                new_mtime = os.stat(self.db.file).st_mtime
-                if self.db_mtime == new_mtime:
-                    log.info('File system unchanged, not uploading metadata.')
-                    continue
+#             with llfuse.lock:
+#                 if self.quit:
+#                     break
+#                 new_mtime = os.stat(self.db.file).st_mtime
+#                 if self.db_mtime == new_mtime:
+#                     log.info('File system unchanged, not uploading metadata.')
+#                     continue
 
-                # log.info('Dumping metadata...')
-                # fh = tempfile.TemporaryFile()
-                # dump_metadata(self.db, fh)
+#                 log.info('Dumping metadata...')
+#                 # fh = tempfile.TemporaryFile()
+#                 # dump_metadata(self.db, fh)
 
-            with self.backend_pool() as backend:
-                seq_no = get_seq_no(backend)
-                if seq_no > self.param['seq_no']:
-                    log.error('Remote metadata is newer than local (%d vs %d), '
-                              'refusing to overwrite and switching to failsafe mode!',
-                              seq_no, self.param['seq_no'])
-                    self.fs.failsafe = True
-                    fh.close()
-                    break
+#             with self.backend_pool() as backend:
+#                 seq_no = get_seq_no(backend)
+#                 if seq_no > self.param['seq_no']:
+#                     log.error('Remote metadata is newer than local (%d vs %d), '
+#                               'refusing to overwrite and switching to failsafe mode!',
+#                               seq_no, self.param['seq_no'])
+#                     self.fs.failsafe = True
+#                     fh.close()
+#                     break
 
-                fh.seek(0)
-                self.param['last-modified'] = time.time()
+#                 fh.seek(0)
+#                 self.param['last-modified'] = time.time()
 
-                # Temporarily decrease sequence no, this is not the final upload
-                self.param['seq_no'] -= 1
-                upload_metadata(backend, fh, self.param)
-                self.param['seq_no'] += 1
+#                 # Temporarily decrease sequence no, this is not the final upload
+#                 self.param['seq_no'] -= 1
+#                 upload_metadata(backend, fh, self.param)
+#                 self.param['seq_no'] += 1
 
-                fh.close()
-                self.db_mtime = new_mtime
+#                 fh.close()
+#                 self.db_mtime = new_mtime
 
-        # Break reference loop
-        self.fs = None
+#         # Break reference loop
+#         self.fs = None
 
-        log.debug('finished')
+#         log.debug('finished')
 
-    def stop(self):
-        '''Signal thread to terminate'''
+#     def stop(self):
+#         '''Signal thread to terminate'''
 
-        log.debug('started')
-        self.quit = True
-        self.event.set()
+#         log.debug('started')
+#         self.quit = True
+#         self.event.set()
 
 def setup_exchook():
     '''Send SIGTERM if any other thread terminates with an exception
