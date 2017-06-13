@@ -144,7 +144,7 @@ class Connection(object):
         self.conn.commit()
         # return self.conn.last_insert_rowid()
         sql = 'SELECT LAST_INSERT_ID()'
-        return self.getval(sql)
+        return self.conn.cursor().execute(sql)
 
     def has_val(self, *a, **kw):
         '''Execute statement and check if it gives result rows'''
