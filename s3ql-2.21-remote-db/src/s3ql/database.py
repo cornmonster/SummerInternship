@@ -149,14 +149,15 @@ class Connection(object):
     def has_val(self, *a, **kw):
         '''Execute statement and check if it gives result rows'''
 
-        res = self.conn.cursor().execute(*a, **kw)
+        cur = self.conn.cursor()
+        cur.execute(*a, **kw)
         try:
-            next(res)
+            cur.fetchone()
         except StopIteration:
             return False
         else:
             # Finish the active SQL statement
-            res.close()
+            cur.close()
             return True
 
     def get_val(self, *a, **kw):
@@ -193,7 +194,7 @@ class Connection(object):
             pass
         else:
             # Finish the active SQL statement
-            res.close()
+            cur.close()
             raise NoUniqueValueError()
 
         return row
