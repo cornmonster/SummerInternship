@@ -179,7 +179,7 @@ class InodeCache(object):
             return inode
 
     def getattr(self, id_): #@ReservedAssignment
-        attrs = self.db.get_row("SELECT %s FROM inodes WHERE id=%s " % (ATTRIBUTE_STR
+        attrs = self.db.get_row("SELECT %s FROM inodes WHERE id=%s " % (ATTRIBUTE_STR,
                                   id_))
         inode = _Inode(self.generation)
 
