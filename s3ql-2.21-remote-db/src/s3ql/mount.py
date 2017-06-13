@@ -15,8 +15,7 @@ from .common import (get_backend_cachedir, get_seq_no, get_backend_factory,
 from .daemonize import daemonize
 from .database import Connection
 from .inode_cache import InodeCache
-from .metadata import (upload_metadata, dump_and_upload_metadata,
-                       dump_metadata)
+from .metadata import (upload_metadata, dump_and_upload_metadata)
 from .parse_args import ArgumentParser
 from .exit_stack import ExitStack
 from threading import Thread
