@@ -58,25 +58,25 @@ def init_tables(conn):
     # Insert root directory
     now_ns = time_ns()
     conn.execute("INSERT INTO inodes (id,mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
-                 "VALUES (%d,%d,%d,%d,%d,%d,%d,%d)",
+                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                    (int(ROOT_INODE), int(stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
                    | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH),
                     int(os.getuid()), int(os.getgid()), int(now_ns), int(now_ns), int(now_ns), 1))
 
     # Insert control inode, the actual values don't matter that much
     conn.execute("INSERT INTO inodes (id,mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
-                 "VALUES (?,?,?,?,?,?,?,?)",
+                 "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
                  (CTRL_INODE, stat.S_IFREG | stat.S_IRUSR | stat.S_IWUSR,
                   0, 0, now_ns, now_ns, now_ns, 42))
 
     # Insert lost+found directory
     inode = conn.rowid("INSERT INTO inodes (mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
-                       "VALUES (?,?,?,?,?,?,?)",
+                       "VALUES (%s,%s,%s,%s,%s,%s,%s)",
                        (stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR,
                         os.getuid(), os.getgid(), now_ns, now_ns, now_ns, 1))
-    name_id = conn.rowid('INSERT INTO names (name, refcount) VALUES(?,?)',
+    name_id = conn.rowid('INSERT INTO names (name, refcount) VALUES(%s,%s)',
                          (b'lost+found', 1))
-    conn.execute("INSERT INTO contents (name_id, inode, parent_inode) VALUES(?,?,?)",
+    conn.execute("INSERT INTO contents (name_id, inode, parent_inode) VALUES(%s,%s,%s)",
                  (name_id, inode, ROOT_INODE))
 
 def main(args=None):
