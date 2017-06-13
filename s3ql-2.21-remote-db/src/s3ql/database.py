@@ -151,9 +151,7 @@ class Connection(object):
 
         cur = self.conn.cursor()
         cur.execute(*a, **kw)
-        try:
-            cur.fetchone()
-        except StopIteration:
+        if(cur.fetchone() == None):
             return False
         else:
             # Finish the active SQL statement
@@ -183,20 +181,13 @@ class Connection(object):
 
         cur = self.conn.cursor()
         cur.execute(*a, **kw)
-        try:
-            row = cur.fetchone()
-        except StopIteration:
+        row = cur.fetchone()
+        if(row == None):
             raise NoSuchRowError()
-        try:
-            cur.fetchone()
-        except StopIteration:
-            # Fine, we only wanted one row
-            pass
-        else:
+        if(cur.fetchone() != None):
             # Finish the active SQL statement
             cur.close()
             raise NoUniqueValueError()
-
         return row
 
     # *need to be modified*: mysql doesn't provide rowid. Since there is no reference
