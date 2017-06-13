@@ -179,8 +179,8 @@ class InodeCache(object):
             return inode
 
     def getattr(self, id_): #@ReservedAssignment
-        attrs = self.db.get_row("SELECT %s FROM inodes WHERE id=%s " % ATTRIBUTE_STR,
-                                  (id_,))
+        attrs = self.db.get_row("SELECT %s FROM inodes WHERE id=%s " % (ATTRIBUTE_STR
+                                  id_))
         inode = _Inode(self.generation)
 
         for (i, id_) in enumerate(ATTRIBUTES):
@@ -210,7 +210,7 @@ class InodeCache(object):
             return
         inode.dirty = False
 
-        self.db.execute("UPDATE inodes SET %s WHERE id=%s" % UPDATE_STR,
+        self.db.execute("UPDATE inodes SET "+ UPDATE_STR + " WHERE id=%s",
                         [ getattr(inode, x) for x in UPDATE_ATTRS ] + [inode.id])
 
     def flush_id(self, id_):
