@@ -133,10 +133,11 @@ def main(args=None):
     #                     exitcode=2)
 
     # Handle --cachesize
-    rec_cachesize = options.max_cache_entries * param['max_obj_size'] / 2
+    # rec_cachesize = options.max_cache_entries * param['max_obj_size'] / 2
     avail_cache = shutil.disk_usage(os.path.dirname(cachepath))[2] / 1024
     if options.cachesize is None:
-        options.cachesize = min(rec_cachesize, 0.8 * avail_cache)
+        # options.cachesize = min(rec_cachesize, 0.8 * avail_cache)
+        options.cachesize = 0.8 * avail_cache
         log.info('Setting cache size to %d MB', options.cachesize / 1024)
     elif options.cachesize > avail_cache:
         log.warning('Requested cache size %d MB, but only %d MB available',
@@ -360,80 +361,80 @@ def determine_threads(options):
         log.info("Using %d upload threads.", threads)
         return threads
 
-# def get_metadata(backend, cachepath):
-#     '''Retrieve metadata'''
+def get_metadata(backend, cachepath):
+    '''Retrieve metadata'''
 
-#     seq_no = get_seq_no(backend)
+    seq_no = get_seq_no(backend)
 
-#     # Check for cached metadata
-#     db = None
-#     if os.path.exists(cachepath + '.params'):
-#         param = load_params(cachepath)
-#         if param['seq_no'] < seq_no:
-#             log.info('Ignoring locally cached metadata (outdated).')
-#             param = backend.lookup('s3ql_metadata')
-#         elif param['seq_no'] > seq_no:
-#             raise QuietError("File system not unmounted cleanly, run fsck!",
-#                              exitcode=30)
-#         else:
-#             log.info('Using cached metadata.')
-#             db = Connection(cachepath + '.db')
-#     else:
-#         param = backend.lookup('s3ql_metadata')
+    # Check for cached metadata
+    db = Connection()
+    if os.path.exists(cachepath + '.params'):
+        param = load_params(cachepath)
+        if param['seq_no'] < seq_no:
+            log.info('Ignoring locally cached metadata (outdated).')
+            param = backend.lookup('s3ql_metadata')
+        elif param['seq_no'] > seq_no:
+            raise QuietError("File system not unmounted cleanly, run fsck!",
+                             exitcode=30)
+        else:
+            log.info('Using cached metadata.')
+            # db = Connection(cachepath + '.db')
+    else:
+        param = backend.lookup('s3ql_metadata')
 
-#     # Check for unclean shutdown
-#     if param['seq_no'] < seq_no:
-#         raise QuietError('Backend reports that fs is still mounted elsewhere, aborting.',
-#                          exitcode=31)
+    # Check for unclean shutdown
+    if param['seq_no'] < seq_no:
+        raise QuietError('Backend reports that fs is still mounted elsewhere, aborting.',
+                         exitcode=31)
 
-#     # Check revision
-#     if param['revision'] < CURRENT_FS_REV:
-#         raise QuietError('File system revision too old, please run `s3qladm upgrade` first.',
-#                          exitcode=32)
-#     elif param['revision'] > CURRENT_FS_REV:
-#         raise QuietError('File system revision too new, please update your '
-#                          'S3QL installation.', exitcode=33)
+    # Check revision
+    if param['revision'] < CURRENT_FS_REV:
+        raise QuietError('File system revision too old, please run `s3qladm upgrade` first.',
+                         exitcode=32)
+    elif param['revision'] > CURRENT_FS_REV:
+        raise QuietError('File system revision too new, please update your '
+                         'S3QL installation.', exitcode=33)
 
-#     # Check that the fs itself is clean
-#     if param['needs_fsck']:
-#         raise QuietError("File system damaged or not unmounted cleanly, run fsck!",
-#                          exitcode=30)
-#     if time.time() - param['last_fsck'] > 60 * 60 * 24 * 31:
-#         log.warning('Last file system check was more than 1 month ago, '
-#                  'running fsck.s3ql is recommended.')
+    # Check that the fs itself is clean
+    if param['needs_fsck']:
+        raise QuietError("File system damaged or not unmounted cleanly, run fsck!",
+                         exitcode=30)
+    if time.time() - param['last_fsck'] > 60 * 60 * 24 * 31:
+        log.warning('Last file system check was more than 1 month ago, '
+                 'running fsck.s3ql is recommended.')
 
-#     if  param['max_inode'] > 2 ** 32 - 50000:
-#         raise QuietError('Insufficient free inodes, fsck run required.',
-#                          exitcode=34)
-#     elif param['max_inode'] > 2 ** 31:
-#         log.warning('Few free inodes remaining, running fsck is recommended')
+    if  param['max_inode'] > 2 ** 32 - 50000:
+        raise QuietError('Insufficient free inodes, fsck run required.',
+                         exitcode=34)
+    elif param['max_inode'] > 2 ** 31:
+        log.warning('Few free inodes remaining, running fsck is recommended')
 
-#     if os.path.exists(cachepath + '-cache'):
-#         for i in itertools.count():
-#             bak_name = '%s-cache.bak%d' % (cachepath, i)
-#             if not os.path.exists(bak_name):
-#                 break
-#         log.warning('Found outdated cache directory (%s), renaming to .bak%d',
-#                     cachepath + '-cache', i)
-#         log.warning('You should delete this directory once you are sure that '
-#                     'everything is in order.')
-#         os.rename(cachepath + '-cache', bak_name)
+    if os.path.exists(cachepath + '-cache'):
+        for i in itertools.count():
+            bak_name = '%s-cache.bak%d' % (cachepath, i)
+            if not os.path.exists(bak_name):
+                break
+        log.warning('Found outdated cache directory (%s), renaming to .bak%d',
+                    cachepath + '-cache', i)
+        log.warning('You should delete this directory once you are sure that '
+                    'everything is in order.')
+        os.rename(cachepath + '-cache', bak_name)
 
-#     # Download metadata
-#     if not db:
-#         db = download_metadata(backend, cachepath + '.db')
-#     save_params(cachepath, param)
+    # Download metadata
+    # if not db:
+        # db = download_metadata(backend, cachepath + '.db')
+    save_params(cachepath, param)
 
-#     return (param, db)
+    return (param, db)
 
-# def mark_metadata_dirty(backend, cachepath, param):
-#     '''Mark metadata as dirty and increase sequence number'''
+def mark_metadata_dirty(backend, cachepath, param):
+    '''Mark metadata as dirty and increase sequence number'''
 
-#     param['seq_no'] += 1
-#     param['needs_fsck'] = True
-#     save_params(cachepath, param)
-#     backend['s3ql_seq_no_%d' % param['seq_no']] = b'Empty'
-#     param['needs_fsck'] = False
+    param['seq_no'] += 1
+    param['needs_fsck'] = True
+    save_params(cachepath, param)
+    backend['s3ql_seq_no_%d' % param['seq_no']] = b'Empty'
+    param['needs_fsck'] = False
 
 def get_fuse_opts(options):
     '''Return fuse options for given command line options'''
@@ -585,88 +586,88 @@ def parse_args(args):
 
     return options
 
-# class MetadataUploadThread(Thread):
-#     '''
-#     Periodically upload metadata. Upload is done every `interval`
-#     seconds, and whenever `event` is set. To terminate thread,
-#     set `quit` attribute as well as `event` event.
+class MetadataUploadThread(Thread):
+    '''
+    Periodically upload metadata. Upload is done every `interval`
+    seconds, and whenever `event` is set. To terminate thread,
+    set `quit` attribute as well as `event` event.
 
-#     This class uses the llfuse global lock. When calling objects
-#     passed in the constructor, the global lock is acquired first.
-#     '''
+    This class uses the llfuse global lock. When calling objects
+    passed in the constructor, the global lock is acquired first.
+    '''
 
-#     def __init__(self, backend_pool, param, db, interval):
-#         super().__init__()
-#         self.backend_pool = backend_pool
-#         self.param = param
-#         self.db = db
-#         self.interval = interval
-#         self.daemon = True
-#         self.db_mtime = os.stat(db.file).st_mtime
-#         self.event = threading.Event()
-#         self.quit = False
-#         self.name = 'Metadata-Upload-Thread'
+    def __init__(self, backend_pool, param, db, interval):
+        super().__init__()
+        self.backend_pool = backend_pool
+        self.param = param
+        self.db = db
+        self.interval = interval
+        self.daemon = True
+        self.db_mtime = os.stat(db.file).st_mtime
+        self.event = threading.Event()
+        self.quit = False
+        self.name = 'Metadata-Upload-Thread'
 
-#         # Can't assign in constructor, because Operations instance needs
-#         # access to self.event as well.
-#         self.fs = None
+        # Can't assign in constructor, because Operations instance needs
+        # access to self.event as well.
+        self.fs = None
 
-#     def run(self):
-#         log.debug('started')
+    def run(self):
+        log.debug('started')
 
-#         assert self.fs is not None
+        assert self.fs is not None
 
-#         while not self.quit:
-#             self.event.wait(self.interval)
-#             self.event.clear()
+        while not self.quit:
+            self.event.wait(self.interval)
+            self.event.clear()
 
-#             if self.quit:
-#                 break
+            if self.quit:
+                break
 
-#             with llfuse.lock:
-#                 if self.quit:
-#                     break
-#                 new_mtime = os.stat(self.db.file).st_mtime
-#                 if self.db_mtime == new_mtime:
-#                     log.info('File system unchanged, not uploading metadata.')
-#                     continue
+            with llfuse.lock:
+                if self.quit:
+                    break
+                new_mtime = os.stat(self.db.file).st_mtime
+                if self.db_mtime == new_mtime:
+                    log.info('File system unchanged, not uploading metadata.')
+                    continue
 
-#                 log.info('Dumping metadata...')
-#                 # fh = tempfile.TemporaryFile()
-#                 # dump_metadata(self.db, fh)
+                log.info('Dumping metadata...')
+                fh = tempfile.TemporaryFile()
+                # dump_metadata(self.db, fh)
 
-#             with self.backend_pool() as backend:
-#                 seq_no = get_seq_no(backend)
-#                 if seq_no > self.param['seq_no']:
-#                     log.error('Remote metadata is newer than local (%d vs %d), '
-#                               'refusing to overwrite and switching to failsafe mode!',
-#                               seq_no, self.param['seq_no'])
-#                     self.fs.failsafe = True
-#                     fh.close()
-#                     break
+            with self.backend_pool() as backend:
+                seq_no = get_seq_no(backend)
+                if seq_no > self.param['seq_no']:
+                    log.error('Remote metadata is newer than local (%d vs %d), '
+                              'refusing to overwrite and switching to failsafe mode!',
+                              seq_no, self.param['seq_no'])
+                    self.fs.failsafe = True
+                    fh.close()
+                    break
 
-#                 fh.seek(0)
-#                 self.param['last-modified'] = time.time()
+                fh.seek(0)
+                self.param['last-modified'] = time.time()
 
-#                 # Temporarily decrease sequence no, this is not the final upload
-#                 self.param['seq_no'] -= 1
-#                 upload_metadata(backend, fh, self.param)
-#                 self.param['seq_no'] += 1
+                # Temporarily decrease sequence no, this is not the final upload
+                self.param['seq_no'] -= 1
+                upload_metadata(backend, fh, self.param)
+                self.param['seq_no'] += 1
 
-#                 fh.close()
-#                 self.db_mtime = new_mtime
+                fh.close()
+                self.db_mtime = new_mtime
 
-#         # Break reference loop
-#         self.fs = None
+        # Break reference loop
+        self.fs = None
 
-#         log.debug('finished')
+        log.debug('finished')
 
-#     def stop(self):
-#         '''Signal thread to terminate'''
+    def stop(self):
+        '''Signal thread to terminate'''
 
-#         log.debug('started')
-#         self.quit = True
-#         self.event.set()
+        log.debug('started')
+        self.quit = True
+        self.event.set()
 
 def setup_exchook():
     '''Send SIGTERM if any other thread terminates with an exception

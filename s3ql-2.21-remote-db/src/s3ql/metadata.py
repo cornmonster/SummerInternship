@@ -107,34 +107,34 @@ log = logging.getLogger(__name__)
 
 #     return Connection(dbfile)
 
-# def cycle_metadata(backend, keep=10):
-#     '''Rotate metadata backups'''
+def cycle_metadata(backend, keep=10):
+    '''Rotate metadata backups'''
 
-#     # Since we always overwrite the source afterwards, we can
-#     # use either copy or rename - so we pick whatever is faster.
-#     if backend.has_native_rename:
-#         cycle_fn = backend.rename
-#     else:
-#         cycle_fn = backend.copy
+    # Since we always overwrite the source afterwards, we can
+    # use either copy or rename - so we pick whatever is faster.
+    if backend.has_native_rename:
+        cycle_fn = backend.rename
+    else:
+        cycle_fn = backend.copy
 
-#     log.info('Backing up old metadata...')
-#     for i in range(keep)[::-1]:
-#         try:
-#             cycle_fn("s3ql_metadata_bak_%d" % i, "s3ql_metadata_bak_%d" % (i + 1))
-#         except NoSuchObject:
-#             pass
+    log.info('Backing up old metadata...')
+    for i in range(keep)[::-1]:
+        try:
+            cycle_fn("s3ql_metadata_bak_%d" % i, "s3ql_metadata_bak_%d" % (i + 1))
+        except NoSuchObject:
+            pass
 
-#     # However, the current metadata object should always be copied,
-#     # so that even if there's a crash we don't end up without it
-#     try:
-#         backend.copy("s3ql_metadata", "s3ql_metadata_bak_0")
-#     except NoSuchObject:
-#         # In case of mkfs, there may be no metadata object yet
-#         pass
-#     cycle_fn("s3ql_metadata_new", "s3ql_metadata")
+    # However, the current metadata object should always be copied,
+    # so that even if there's a crash we don't end up without it
+    try:
+        backend.copy("s3ql_metadata", "s3ql_metadata_bak_0")
+    except NoSuchObject:
+        # In case of mkfs, there may be no metadata object yet
+        pass
+    cycle_fn("s3ql_metadata_new", "s3ql_metadata")
 
-#     if cycle_fn is backend.copy:
-#         backend.delete('s3ql_metadata_new')
+    if cycle_fn is backend.copy:
+        backend.delete('s3ql_metadata_new')
 
 # def dump_metadata(db, fh):
 #     '''Dump metadata into fh
@@ -306,24 +306,24 @@ def stream_read_bz2(ifh, ofh):
 #         tmpfh.seek(0)
 #         return restore_metadata(tmpfh, db_file)
 
-# def dump_and_upload_metadata(backend, db, param):
-#     with tempfile.TemporaryFile() as fh:
-#         log.info('Dumping metadata...')
-#         # dump_metadata(db, fh)
-#         upload_metadata(backend, fh, param)
+def dump_and_upload_metadata(backend, db, param):
+    with tempfile.TemporaryFile() as fh:
+        log.info('Dumping metadata...')
+        # dump_metadata(db, fh)
+        upload_metadata(backend, fh, param)
 
 # # Since we only want to upload param, we have to ensure that fh is empty
-# def upload_metadata(backend, fh, param):
-#     log.info("Compressing and uploading metadata...")
-#     def do_write(obj_fh):
-#         fh.seek(0)
-#         # Compress *fh* into *ofh* using bz2 compression
-#         stream_write_bz2(fh, obj_fh)
-#         return obj_fh
-#     obj_fh = backend.perform_write(do_write, "s3ql_metadata_new",
-#                                    metadata=param, is_compressed=True)
-#     log.info('Wrote %s of compressed metadata.',
-#              pretty_print_size(obj_fh.get_obj_size()))
+def upload_metadata(backend, fh, param):
+    log.info("Compressing and uploading metadata...")
+    def do_write(obj_fh):
+        fh.seek(0)
+        # Compress *fh* into *ofh* using bz2 compression
+        stream_write_bz2(fh, obj_fh)
+        return obj_fh
+    obj_fh = backend.perform_write(do_write, "s3ql_metadata_new",
+                                   metadata=param, is_compressed=True)
+    log.info('Wrote %s of compressed metadata.',
+             pretty_print_size(obj_fh.get_obj_size()))
 
-#     log.info('Cycling metadata backups...')
-#     cycle_metadata(backend)
+    log.info('Cycling metadata backups...')
+    cycle_metadata(backend)
