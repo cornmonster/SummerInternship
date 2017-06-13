@@ -20,6 +20,7 @@ ATTRIBUTE_STR = ', '.join(ATTRIBUTES)
 UPDATE_ATTRS = ('mode', 'refcount', 'uid', 'gid', 'size', 'locked',
               'rdev', 'atime_ns', 'mtime_ns', 'ctime_ns')
 UPDATE_STR = ', '.join('%s=?' % x for x in UPDATE_ATTRS)
+UPDATE_STR = UPDATE_STR.replace('?', '%s')
 
 MAX_INODE = 2 ** 32 - 1
 
@@ -147,7 +148,7 @@ class InodeCache(object):
 
 
     def __delitem__(self, inode):
-        if self.db.execute('DELETE FROM inodes WHERE id=?', (inode,)) != 1:
+        if self.db.execute('DELETE FROM inodes WHERE id=%s', (inode,)) != 1:
             raise KeyError('No such inode')
         inode = self.attrs.pop(inode, None)
         if inode is not None:
@@ -178,7 +179,7 @@ class InodeCache(object):
             return inode
 
     def getattr(self, id_): #@ReservedAssignment
-        attrs = self.db.get_row("SELECT %s FROM inodes WHERE id=? " % ATTRIBUTE_STR,
+        attrs = self.db.get_row("SELECT %s FROM inodes WHERE id=%s " % ATTRIBUTE_STR,
                                   (id_,))
         inode = _Inode(self.generation)
 
@@ -193,12 +194,12 @@ class InodeCache(object):
 
         bindings = tuple(kw[x] for x in ATTRIBUTES if x in kw)
         columns = ', '.join(x for x in ATTRIBUTES if x in kw)
-        values = ', '.join('?' * len(kw))
+        values = ', '.join('%s' * len(kw))
 
         id_ = self.db.rowid('INSERT INTO inodes (%s) VALUES(%s)' % (columns, values),
                             bindings)
         if id_ > MAX_INODE - 1:
-            self.db.execute('DELETE FROM inodes WHERE id=?', (id_,))
+            self.db.execute('DELETE FROM inodes WHERE id=%s', (id_,))
             raise OutOfInodesError()
 
         return self[id_]
@@ -209,7 +210,7 @@ class InodeCache(object):
             return
         inode.dirty = False
 
-        self.db.execute("UPDATE inodes SET %s WHERE id=?" % UPDATE_STR,
+        self.db.execute("UPDATE inodes SET %s WHERE id=%s" % UPDATE_STR,
                         [ getattr(inode, x) for x in UPDATE_ATTRS ] + [inode.id])
 
     def flush_id(self, id_):

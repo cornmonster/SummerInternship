@@ -15,8 +15,8 @@ from .common import (get_backend_cachedir, get_seq_no, get_backend_factory,
 from .daemonize import daemonize
 from .database import Connection
 from .inode_cache import InodeCache
-# from .metadata import (download_metadata, upload_metadata, dump_and_upload_metadata,
-#                        dump_metadata)
+from .metadata import (upload_metadata, dump_and_upload_metadata,
+                       dump_metadata)
 from .parse_args import ArgumentParser
 from .exit_stack import ExitStack
 from threading import Thread
@@ -125,8 +125,8 @@ def main(args=None):
     cachepath = get_backend_cachedir(options.storage_url, options.cachedir)
 
     # Retrieve metadata
-    # with backend_pool() as backend:
-    #     (param, db) = get_metadata(backend, cachepath)
+    with backend_pool() as backend:
+        (param, db) = get_metadata(backend, cachepath)
 
     #if param['max_obj_size'] < options.min_obj_size:
     #    raise QuietError('Maximum object size must be bigger than minimum object size.',
@@ -143,13 +143,13 @@ def main(args=None):
         log.warning('Requested cache size %d MB, but only %d MB available',
                     options.cachesize / 1024, avail_cache / 1024)
 
-    if options.nfs:
-        # NFS may try to look up '..', so we have to speed up this kind of query
-        log.info('Creating NFS indices...')
-        db.execute('CREATE INDEX IF NOT EXISTS ix_contents_inode ON contents(inode)')
+    # if options.nfs:
+    #     # NFS may try to look up '..', so we have to speed up this kind of query
+    #     log.info('Creating NFS indices...')
+    #     db.execute('CREATE INDEX IF NOT EXISTS ix_contents_inode ON contents(inode)')
 
-    else:
-        db.execute('DROP INDEX IF EXISTS ix_contents_inode')
+    # else:
+    #     db.execute('DROP INDEX IF EXISTS ix_contents_inode')
 
     # metadata_upload_thread = MetadataUploadThread(backend_pool, param, db,
     #                                               options.metadata_upload_interval)
