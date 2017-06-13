@@ -58,7 +58,7 @@ def init_tables(conn):
     # Insert root directory
     now_ns = time_ns()
     conn.execute("INSERT INTO inodes (id,mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
-                 "VALUES (?,?,?,?,?,?,?,?)",
+                 "VALUES (%d,%d,%d,%d,%d,%d,%d,%d)",
                    (ROOT_INODE, stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR
                    | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH,
                     os.getuid(), os.getgid(), now_ns, now_ns, now_ns, 1))
