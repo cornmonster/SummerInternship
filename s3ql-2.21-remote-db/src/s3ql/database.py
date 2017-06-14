@@ -119,8 +119,9 @@ class Connection(object):
         (otherwise it may block execution of other statements). To this end,
         the iterator may also be used as a context manager.
         '''
-
-        return ResultSet(self.conn.cursor().execute(*a, **kw))
+        cur = self.conn.cursor()
+        cur.execute(*a, **kw)
+        return ResultSet(cur)
 
     # *modified*: Since mysql does't provide changes(), we need to return the cursor
     # attribute rowcount.
@@ -232,7 +233,10 @@ class ResultSet(object):
         self.cur = cur
 
     def __next__(self):
-        return next(self.cur)
+        res = self.cur.fetchone()
+        if(res == None):
+            raise StopIteration
+        return res
 
     def __iter__(self):
         return self
@@ -245,5 +249,4 @@ class ResultSet(object):
 
     def close(self):
         '''Terminate query'''
-
         self.cur.close()
