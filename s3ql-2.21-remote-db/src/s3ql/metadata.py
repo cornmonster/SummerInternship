@@ -177,10 +177,11 @@ def create_tables(conn):
     conn.execute("""
     CREATE TABLE blocks (
         id        INTEGER PRIMARY KEY AUTO_INCREMENT,
-        hash      VARCHAR(64) UNIQUE,
+        hash      BLOB,
         refcount  INT,
         size      INT NOT NULL,
-        obj_id    INTEGER NOT NULL REFERENCES objects(id)
+        obj_id    INTEGER NOT NULL REFERENCES objects(id),
+        UNIQUE (hash(16))
     );""")
 
     # Table with filesystem metadata
@@ -218,16 +219,16 @@ def create_tables(conn):
     conn.execute("""
     CREATE TABLE symlink_targets (
         inode     INTEGER PRIMARY KEY REFERENCES inodes(id),
-        target    VARCHAR(255) NOT NULL
+        target    BLOB NOT NULL
     );""")
 
     # Names of file system objects
     conn.execute("""
     CREATE TABLE names (
         id     INTEGER PRIMARY KEY AUTO_INCREMENT,
-        name   VARCHAR(255) NOT NULL,
+        name   BLOB NOT NULL,
         refcount  INT NOT NULL,
-        UNIQUE (name)
+        UNIQUE (name(255))
     );""")
 
     # Table of filesystem objects
