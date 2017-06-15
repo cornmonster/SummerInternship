@@ -134,6 +134,8 @@ class Operations(llfuse.Operations):
             and returns the inode id of corresponding file
         '''
         eprint('fs._lookup is called')
+        eprint('    id_p: %d' % id_p)
+        eprint('    name: %s' % name)
         log.debug('started with %d, %r', id_p, name)
 
         if name == CTRL_NAME:
@@ -161,6 +163,7 @@ class Operations(llfuse.Operations):
             inode = self.inodes[id_]
 
         self.open_inodes[inode.id] += 1
+        eprint('    ret: %d' % id_)
         return inode
 
     def getattr(self, id_, ctx):
@@ -198,6 +201,9 @@ class Operations(llfuse.Operations):
 
     def readdir(self, id_, off):
         eprint('fs.readdir is called')
+        eprint('    id: %d' % id_)
+        eprint('    off: %d' % off)
+
         log.debug('started with %d, %d', id_, off)
         if off == 0:
             off = -1
@@ -212,6 +218,7 @@ class Operations(llfuse.Operations):
                            'WHERE parent_inode=%s AND name_id > %s ORDER BY name_id',
                            (id_, off-3)) as res:
             for (next_, name, cid_) in res:
+                eprint('    readdir ret name: %s' % name)
                 yield (name, self.inodes[cid_].entry_attributes(), next_+3)
 
     def getxattr(self, id_, name, ctx):
