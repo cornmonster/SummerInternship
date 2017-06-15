@@ -117,13 +117,22 @@ class Operations(llfuse.Operations):
         self.open_inodes[llfuse.ROOT_INODE] += 1
 
     def destroy(self):
+        print('fs.destory is called')
         self.forget(list(self.open_inodes.items()))
         self.inodes.destroy()
 
     def lookup(self, id_p, name, ctx):
+        print('fs.lookup is called')
         return self._lookup(id_p, name, ctx).entry_attributes()
 
     def _lookup(self, id_p, name, ctx):
+        ''' This method takes 
+                1. parent's inode id
+                2. name of the file
+                3. context
+            and returns the inode id of corresponding file
+        '''
+        print('fs._lookup is called')
         log.debug('started with %d, %r', id_p, name)
 
         if name == CTRL_NAME:
@@ -154,6 +163,9 @@ class Operations(llfuse.Operations):
         return inode
 
     def getattr(self, id_, ctx):
+        # returns an instance of EntryAttributes(defined by llfuse), which
+        # contains infomation about thie inode
+        print('fs.getattr is called')
         log.debug('started with %d', id_)
         if id_ == CTRL_INODE:
             # Make sure the control file is only writable by the user
@@ -166,6 +178,7 @@ class Operations(llfuse.Operations):
         return self.inodes[id_].entry_attributes()
 
     def readlink(self, id_, ctx):
+        print('fs.readlink is called')
         log.debug('started with %d', id_)
         now_ns = time_ns()
         inode = self.inodes[id_]
@@ -178,10 +191,12 @@ class Operations(llfuse.Operations):
             raise FUSEError(errno.EINVAL)
 
     def opendir(self, id_, ctx):
+        print('fs.opendir is called')
         log.debug('started with %d', id_)
         return id_
 
     def readdir(self, id_, off):
+        print('fs.readdir is called')
         log.debug('started with %d, %d', id_, off)
         if off == 0:
             off = -1
@@ -199,6 +214,7 @@ class Operations(llfuse.Operations):
                 yield (name, self.inodes[cid_].entry_attributes(), next_+3)
 
     def getxattr(self, id_, name, ctx):
+        print('fs.getxattr is called')
         log.debug('started with %d, %r', id_, name)
         # Handle S3QL commands
         if id_ == CTRL_INODE:
@@ -224,6 +240,7 @@ class Operations(llfuse.Operations):
             return value
 
     def listxattr(self, id_, ctx):
+        print('fs.listxattr is called')
         log.debug('started with %d', id_)
         names = list()
         with self.db.query('SELECT name FROM ext_attributes_v WHERE inode=%s', (id_,)) as res:
@@ -232,6 +249,7 @@ class Operations(llfuse.Operations):
         return names
 
     def setxattr(self, id_, name, value, ctx):
+        print('fs.setxattr is called')
         log.debug('started with %d, %r, %r', id_, name, value)
 
         # Handle S3QL commands
@@ -306,6 +324,7 @@ class Operations(llfuse.Operations):
             self.inodes[id_].ctime_ns = time_ns()
 
     def removexattr(self, id_, name, ctx):
+        print('fs.removexattr is called')
         log.debug('started with %d, %r', id_, name)
 
         if self.failsafe or self.inodes[id_].locked:
@@ -325,7 +344,7 @@ class Operations(llfuse.Operations):
 
     def lock_tree(self, id0):
         '''Lock directory tree'''
-
+        print('fs.lock_tree is called')
         if self.failsafe:
             raise FUSEError(errno.EPERM)
 
@@ -362,7 +381,7 @@ class Operations(llfuse.Operations):
 
     def remove_tree(self, id_p0, name0):
         '''Remove directory tree'''
-
+        print('fs.remove_tree is called')
         if self.failsafe:
             raise FUSEError(errno.EPERM)
 
@@ -429,7 +448,7 @@ class Operations(llfuse.Operations):
 
     def copy_tree(self, src_id, target_id):
         '''Efficiently copy directory tree'''
-
+        print('fs.copy_tree is called')
         if self.failsafe:
             raise FUSEError(errno.EPERM)
 
@@ -544,6 +563,7 @@ class Operations(llfuse.Operations):
         log.debug('finished')
 
     def unlink(self, id_p, name, ctx):
+        print('fs.unlink is called')
         log.debug('started with %d, %r', id_p, name)
         if self.failsafe:
             raise FUSEError(errno.EPERM)
@@ -558,6 +578,7 @@ class Operations(llfuse.Operations):
         self.forget([(inode.id, 1)])
 
     def rmdir(self, id_p, name, ctx):
+        print('fs.rmdir is called')
         log.debug('started with %d, %r', id_p, name)
         if self.failsafe:
             raise FUSEError(errno.EPERM)
@@ -582,7 +603,7 @@ class Operations(llfuse.Operations):
 
         This method releases the global lock.
         '''
-
+        print('fs._remove is called')
         log.debug('started with %d, %r', id_p, name)
 
         now_ns = time_ns()
@@ -626,6 +647,7 @@ class Operations(llfuse.Operations):
         log.debug('finished')
 
     def symlink(self, id_p, name, target, ctx):
+        print('fs.symlink is called')
         log.debug('started with %d, %r, %r', id_p, name, target)
 
         if self.failsafe:
@@ -647,6 +669,7 @@ class Operations(llfuse.Operations):
         return inode.entry_attributes()
 
     def rename(self, id_p_old, name_old, id_p_new, name_new, ctx):
+        print('fs.rename is called')
         log.debug('started with %d, %r, %d, %r', id_p_old, name_old, id_p_new, name_new)
         if name_new == CTRL_NAME or name_old == CTRL_NAME:
             log.warning('Attempted to rename s3ql control file (%s -> %s)',
@@ -684,7 +707,7 @@ class Operations(llfuse.Operations):
 
         Name is inserted in table if it does not yet exist.
         '''
-
+        print('fs._add_name is called')
         try:
             name_id = self.db.get_val('SELECT id FROM names WHERE name=%s', (name,))
         except NoSuchRowError:
@@ -700,7 +723,7 @@ class Operations(llfuse.Operations):
         Name is removed from table if refcount drops to zero. Returns the
         (possibly former) id of the name.
         '''
-
+        print('fs._del_name is called')
         (name_id, refcount) = self.db.get_row('SELECT id, refcount FROM names WHERE name=%s', (name,))
 
         if refcount > 1:
@@ -711,6 +734,7 @@ class Operations(llfuse.Operations):
         return name_id
 
     def _rename(self, id_p_old, name_old, id_p_new, name_new):
+        print('fs._rename is called')
         now_ns = time_ns()
 
         name_id_new = self._add_name(name_new)
@@ -729,7 +753,7 @@ class Operations(llfuse.Operations):
 
     def _replace(self, id_p_old, name_old, id_p_new, name_new,
                  id_old, id_new):
-
+        print('fs._replace is called')
         now_ns = time_ns()
 
         if self.db.has_val("SELECT 1 FROM contents WHERE parent_inode=%s", (id_new,)):
@@ -774,6 +798,7 @@ class Operations(llfuse.Operations):
 
 
     def link(self, id_, new_id_p, new_name, ctx):
+        print('fs.link is called')
         log.debug('started with %d, %d, %r', id_, new_id_p, new_name)
 
         if new_name == CTRL_NAME or id_ == CTRL_INODE:
@@ -806,6 +831,7 @@ class Operations(llfuse.Operations):
 
     def setattr(self, id_, attr, fields, fh, ctx):
         """Handles FUSE setattr() requests"""
+        print('fs.setattr is called')
         inode = self.inodes[id_]
         if fh is not None:
             assert fh == id_
@@ -869,6 +895,7 @@ class Operations(llfuse.Operations):
         return inode.entry_attributes()
 
     def mknod(self, id_p, name, mode, rdev, ctx):
+        print('fs.mknod is called')
         log.debug('started with %d, %r', id_p, name)
         if self.failsafe:
             raise FUSEError(errno.EPERM)
@@ -877,6 +904,7 @@ class Operations(llfuse.Operations):
         return inode.entry_attributes()
 
     def mkdir(self, id_p, name, mode, ctx):
+        print('fs.mkdir is called')
         log.debug('started with %d, %r', id_p, name)
         if self.failsafe:
             raise FUSEError(errno.EPERM)
@@ -886,7 +914,7 @@ class Operations(llfuse.Operations):
 
     def extstat(self):
         '''Return extended file system statistics'''
-
+        print('fs.extstat is called')
         log.debug('started')
 
         # Flush inode cache to get better estimate of total fs size
@@ -906,6 +934,7 @@ class Operations(llfuse.Operations):
                            compr_size, self.db.get_size(), *self.cache.get_usage())
 
     def statfs(self, ctx):
+        print('fs.statfs is called')
         log.debug('started')
 
         stat_ = llfuse.StatvfsData()
@@ -946,6 +975,7 @@ class Operations(llfuse.Operations):
         return stat_
 
     def open(self, id_, flags, ctx):
+        print('fs.open is called')
         log.debug('started with %d', id_)
         if ((flags & os.O_RDWR or flags & os.O_WRONLY)
             and (self.failsafe or self.inodes[id_].locked)):
@@ -962,11 +992,12 @@ class Operations(llfuse.Operations):
         '''
         # Yeah, could be a function and has unused arguments
         #pylint: disable=R0201,W0613
-
+        print('fs.access is called')
         log.debug('started with %d', id_)
         return True
 
     def create(self, id_p, name, mode, flags, ctx):
+        print('fs.create is called')
         log.debug('started with id_p=%d, %s', id_p, name)
         if self.failsafe:
             raise FUSEError(errno.EPERM)
@@ -984,6 +1015,7 @@ class Operations(llfuse.Operations):
         return (inode.id, inode.entry_attributes())
 
     def _create(self, id_p, name, mode, ctx, rdev=0, size=0):
+        print('fs._create is called')
         if name == CTRL_NAME:
             log.warning('Attempted to create s3ql control file at %s',
                      get_path(id_p, self.db, name))
@@ -1023,6 +1055,7 @@ class Operations(llfuse.Operations):
 
 
     def read(self, fh, offset, length):
+        print('fs.read is called')
         '''Read `size` bytes from `fh` at position `off`
 
         Unless EOF is reached, returns exactly `size` bytes.
@@ -1055,6 +1088,7 @@ class Operations(llfuse.Operations):
 
 
     def write(self, fh, offset, buf):
+        print('fs.write is called')
         '''Handle FUSE write requests.
 
         This method releases the global lock while it is running.
@@ -1085,6 +1119,7 @@ class Operations(llfuse.Operations):
         return total
 
     def _readwrite(self, id_, offset, *, buf=None, length=None):
+        print('fs._readwrite is called')
         """Read or write as much as we can.
 
         If *buf* is None, read and return up to *length* bytes.
@@ -1147,6 +1182,7 @@ class Operations(llfuse.Operations):
             return buf + b"\0" * (length - len(buf))
 
     def fsync(self, fh, datasync):
+        print('fs.fsync is called')
         log.debug('started with %d, %s', fh, datasync)
         if not datasync:
             self.inodes.flush_id(fh)
@@ -1155,6 +1191,7 @@ class Operations(llfuse.Operations):
             self.cache.flush(fh, blockno)
 
     def forget(self, forget_list):
+        print('fs.forget is called')
         log.debug('started with %s', forget_list)
 
         for (id_, nlookup) in forget_list:
@@ -1183,17 +1220,21 @@ class Operations(llfuse.Operations):
 
 
     def fsyncdir(self, fh, datasync):
+        print('fs.fsyncdir is called')
         log.debug('started with %d, %s', fh, datasync)
         if not datasync:
             self.inodes.flush_id(fh)
 
     def releasedir(self, fh):
+        print('fs.releasedir is called')
         log.debug('started with %d', fh)
 
     def release(self, fh):
+        print('fs.release is called')
         log.debug('started with %d', fh)
 
     def flush(self, fh):
+        print('fs.flush is called')
         log.debug('started with %d', fh)
 
 
