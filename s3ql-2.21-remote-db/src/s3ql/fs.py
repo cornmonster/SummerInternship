@@ -1238,8 +1238,11 @@ class Operations(llfuse.Operations):
         eprint('fs.flush is called')
         log.debug('started with %d', fh)
 
-def eprint(*a, **kw):
-    print(*a, file=sys.stderr, **kw)
+def eprint(s):
+    # print(*a, file=sys.stderr, **kw)
+    with open('/home/ubuntu/fs.log', 'a+') as fd:
+        fd.write(s+'\n')
+        fd.close()
 
 def update_logging(level, modules):
     root_logger = logging.getLogger()
