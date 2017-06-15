@@ -71,17 +71,17 @@ def init_tables(conn):
                   0, 0, now_ns, now_ns, now_ns, 42))
 
     # Insert lost+found directory
-    inode = conn.rowid("INSERT INTO inodes (mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
-                       "VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                       (stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR,
-                        os.getuid(), os.getgid(), now_ns, now_ns, now_ns, 1))
-    eprint('lost+found is inserted')
-    eprint('    inode id: %d' % inode)
-    name_id = conn.rowid('INSERT INTO names (name, refcount) VALUES(%s,%s)',
-                         (b'lost+found', 1))
-    eprint('    name id: %d' % name_id)
-    conn.execute("INSERT INTO contents (name_id, inode, parent_inode) VALUES(%s,%s,%s)",
-                 (name_id, inode, ROOT_INODE))
+    # inode = conn.rowid("INSERT INTO inodes (mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
+    #                    "VALUES (%s,%s,%s,%s,%s,%s,%s)",
+    #                    (stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR,
+    #                     os.getuid(), os.getgid(), now_ns, now_ns, now_ns, 1))
+    # eprint('lost+found is inserted')
+    # eprint('    inode id: %d' % inode)
+    # # name_id = conn.rowid('INSERT INTO names (name, refcount) VALUES(%s,%s)',
+    #                      (b'lost+found', 1))
+    # eprint('    name id: %d' % name_id)
+    # conn.execute("INSERT INTO contents (name_id, inode, parent_inode) VALUES(%s,%s,%s)",
+    #              (name_id, inode, ROOT_INODE))
 
 def main(args=None):
 
