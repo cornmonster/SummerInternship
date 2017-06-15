@@ -56,6 +56,7 @@ def parse_args(args):
 
 def init_tables(conn):
     # Insert root directory
+    eprint('mkfs.init_tables is called')
     now_ns = time_ns()
     conn.execute("INSERT INTO inodes (id,mode,uid,gid,mtime_ns,atime_ns,ctime_ns,refcount) "
                  "VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
@@ -74,8 +75,11 @@ def init_tables(conn):
                        "VALUES (%s,%s,%s,%s,%s,%s,%s)",
                        (stat.S_IFDIR | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR,
                         os.getuid(), os.getgid(), now_ns, now_ns, now_ns, 1))
+    eprint('lost+found is inserted')
+    eprint('    inode id: %d' % inode)
     name_id = conn.rowid('INSERT INTO names (name, refcount) VALUES(%s,%s)',
                          (b'lost+found', 1))
+    eprint('    name id: %d' % name_id)
     conn.execute("INSERT INTO contents (name_id, inode, parent_inode) VALUES(%s,%s,%s)",
                  (name_id, inode, ROOT_INODE))
 
@@ -180,6 +184,12 @@ def main(args=None):
               ' '.join(split_by_n(b64encode(data_pw).decode(), 4)),
               '---END MASTER KEY---',
               sep='\n')
+
+def eprint(s):
+    # print(*a, file=sys.stderr, **kw)
+    with open('/home/ubuntu/mkfs.log', 'a+') as fd:
+        fd.write(s+'\n')
+        fd.close()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
