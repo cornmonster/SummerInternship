@@ -35,6 +35,7 @@ class _Inode:
         self.generation = generation
 
     def entry_attributes(self):
+        # Create an EntryAttributes object
         attr = llfuse.EntryAttributes()
         attr.st_nlink = self.refcount
         attr.st_blocks = (self.size + 511) // 512
@@ -191,13 +192,15 @@ class InodeCache(object):
         return inode
 
     def create_inode(self, **kw):
-
+        eprint('inode_cache.create_inode is called')
         bindings = tuple(kw[x] for x in ATTRIBUTES if x in kw)
-        columns = ', '.join(x for x in ATTRIBUTES if x in kw)
-        values = ', '.join('%s' * len(kw))
-
-        id_ = self.db.rowid('INSERT INTO inodes (%s) VALUES(%s)' % (columns, values),
-                            bindings)
+        columns = ','.join(x for x in ATTRIBUTES if x in kw)
+        values = ','.join('%s' * len(kw))
+        sql = 'INSERT INTO inodes (%s) VALUES(%s)' % (columns, values)
+        eprint('    sql: %s' % sql)
+        eprint('    bindings: %s' % str(bindings))
+        id_ = self.db.rowid(sql, bindings)
+        eprint('    new inode id: %d' % id_)
         if id_ > MAX_INODE - 1:
             self.db.execute('DELETE FROM inodes WHERE id=%s', (id_,))
             raise OutOfInodesError()
@@ -264,7 +267,13 @@ class InodeCache(object):
 
         sys.excepthook(*exc_info)
 
-
+def eprint(s):
+    from time import gmtime, strftime
+    t = strftime('%Y-%m-%d %H:%M:%S', gmtime())
+    with open('/home/ubuntu/inode_cache.log', 'a+') as fd:
+        prefix = '[%s] ' % t
+        fd.write(prefix + s +'\n')
+        fd.close()
 
 class OutOfInodesError(Exception):
 

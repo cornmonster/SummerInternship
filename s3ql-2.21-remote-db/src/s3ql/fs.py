@@ -1006,6 +1006,8 @@ class Operations(llfuse.Operations):
 
     def create(self, id_p, name, mode, flags, ctx):
         eprint('fs.create is called')
+        eprint('    parent id: %d' % id_p)
+        eprint('    name: %s' % name)
         log.debug('started with id_p=%d, %s', id_p, name)
         if self.failsafe:
             raise FUSEError(errno.EPERM)
@@ -1033,6 +1035,7 @@ class Operations(llfuse.Operations):
         inode_p = self.inodes[id_p]
 
         if inode_p.locked:
+            eprint('parent inode is locked.')
             raise FUSEError(errno.EPERM)
 
         if inode_p.refcount == 0:
@@ -1053,6 +1056,7 @@ class Operations(llfuse.Operations):
                                              uid=ctx.uid, gid=gid, mode=mode, refcount=1,
                                              rdev=rdev, size=size)
         except OutOfInodesError:
+            eprint('Could not find a free inode')
             log.warning('Could not find a free inode')
             raise FUSEError(errno.ENOSPC)
 
@@ -1245,12 +1249,6 @@ class Operations(llfuse.Operations):
         eprint('fs.flush is called')
         log.debug('started with %d', fh)
 
-def eprint(s):
-    # print(*a, file=sys.stderr, **kw)
-    with open('/home/ubuntu/fs.log', 'a+') as fd:
-        fd.write(s+'\n')
-        fd.close()
-
 def update_logging(level, modules):
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
@@ -1264,3 +1262,11 @@ def update_logging(level, modules):
 
     else:
         logging.disable(logging.DEBUG)
+
+def eprint(s):
+    from time import gmtime, strftime
+    t = strftime('%Y-%m-%d %H:%M:%S', gmtime())
+    with open('/home/ubuntu/fs.log', 'a+') as fd:
+        prefix = '[%s] ' % t
+        fd.write(prefix + s +'\n')
+        fd.close()

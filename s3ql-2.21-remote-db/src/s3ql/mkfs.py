@@ -186,9 +186,11 @@ def main(args=None):
               sep='\n')
 
 def eprint(s):
-    # print(*a, file=sys.stderr, **kw)
+    from time import gmtime, strftime
+    t = strftime('%Y-%m-%d %H:%M:%S', gmtime())
     with open('/home/ubuntu/mkfs.log', 'a+') as fd:
-        fd.write(s+'\n')
+        prefix = '[%s] ' % t
+        fd.write(prefix + s +'\n')
         fd.close()
 
 if __name__ == '__main__':
