@@ -156,7 +156,8 @@ class Connection(object):
         cur.execute(sql)
         res = cur.fetchone()
         eprint('    res: %s' % res)
-        return res
+        eprint('    res type: %s' % type(res))
+        return res[0]
 
     def has_val(self, *a, **kw):
         '''Execute statement and check if it gives result rows'''
