@@ -548,7 +548,9 @@ class BlockCache(object):
                 # Note: we must finish all db transactions before adding to
                 # in_transit, otherwise commit() may return before all blocks
                 # are available in db.
-                self.db.execute('INSERT OR REPLACE INTO inode_blocks (block_id, inode, blockno) '
+                # self.db.execute('INSERT OR REPLACE INTO inode_blocks (block_id, inode, blockno) '
+                #                 'VALUES(%s,%s,%s)', (block_id, el.inode, el.blockno))
+                self.db.execute('REPLACE INTO inode_blocks (block_id, inode, blockno) '
                                 'VALUES(%s,%s,%s)', (block_id, el.inode, el.blockno))
 
                 with lock_released:
