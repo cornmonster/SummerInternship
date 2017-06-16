@@ -195,7 +195,7 @@ class InodeCache(object):
         eprint('inode_cache.create_inode is called')
         bindings = tuple(kw[x] for x in ATTRIBUTES if x in kw)
         columns = ','.join(x for x in ATTRIBUTES if x in kw)
-        values = ','.join('%s' * len(kw))
+        values = ','.join(['%s'] * len(kw))
         sql = 'INSERT INTO inodes (%s) VALUES(%s)' % (columns, values)
         eprint('    sql: %s' % sql)
         eprint('    bindings: %s' % str(bindings))
