@@ -57,6 +57,14 @@ log = logging.getLogger(__name__)
 #            'PRAGMA legacy_file_format = off',
 #            )
 
+def eprint(s):
+    from time import gmtime, strftime
+    t = strftime('%Y-%m-%d %H:%M:%S', gmtime())
+    with open('/home/ubuntu/database.log', 'a+') as fd:
+        prefix = '[%s] ' % t
+        fd.write(prefix + s +'\n')
+        fd.close()
+
 class Connection(object):
     '''
     This class wraps an APSW connection object. It should be used instead of any
@@ -140,12 +148,15 @@ class Connection(object):
     # 'SELECT LAST_INSERT_ID()' to get the last inserted rowid
     def rowid(self, *a, **kw):
         """Execute SQL statement and return last inserted rowid"""
-
+        eprint('database.rowid is called')
         self.conn.cursor().execute(*a, **kw)
         self.conn.commit()
         sql = 'SELECT LAST_INSERT_ID()'
-        self.conn.cursor().execute(sql)
-        return self.conn.cursor().fetchone()
+        cur = self.conn.cursor()
+        cur.execute(sql)
+        res = cur.fetchone()
+        eprint('    res: %s' % res)
+        return res
 
     def has_val(self, *a, **kw):
         '''Execute statement and check if it gives result rows'''
