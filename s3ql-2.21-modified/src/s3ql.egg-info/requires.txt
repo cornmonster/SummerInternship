@@ -1,0 +1,6 @@
+apsw >= 3.7.0
+pycrypto
+requests
+defusedxml
+dugong >= 3.4
+llfuse >= 1.0, < 2.0

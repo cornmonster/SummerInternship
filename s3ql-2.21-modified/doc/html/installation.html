@@ -1,0 +1,267 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation &mdash; S3QL 2.21 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.21',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="top" title="S3QL 2.21 documentation" href="index.html" />
+    <link rel="next" title="Storage Backends" href="backends.html" />
+    <link rel="prev" title="About S3QL" href="about.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="backends.html" title="Storage Backends"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="about.html" title="About S3QL"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S3QL 2.21 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About S3QL</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-s3ql">Installing S3QL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-version">Development Version</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-tests-requiring-remote-servers">Running tests requiring remote servers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Storage Backends</a></li>
+<li class="toctree-l1"><a class="reference internal" href="durability.html">Important Rules to Avoid Losing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mkfs.html">File System Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adm.html">Managing File Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mount.html">Mounting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="special.html">Advanced S3QL Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="umount.html">Unmounting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fsck.html">Checking for Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authinfo.html">Storing Authentication Information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">Contributed Programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips &amp; Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="issues.html">Known Issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="man/index.html">Manpages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Further Resources / Getting Help</a></li>
+<li class="toctree-l1"><a class="reference internal" href="impl_details.html">Implementation Details</a></li>
+</ul>
+
+          
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>S3QL depends on several other programs and libraries that have to be
+installed first. The best method to satisfy these dependencies depends
+on your distribution.</p>
+<p>The following instructions are for S3QL 2.21 and should be
+applicable to any system. The <a class="reference external" href="https://bitbucket.org/nikratio/s3ql/wiki/Home">S3QL Wiki</a> contains <a class="reference external" href="https://bitbucket.org/nikratio/s3ql/wiki/Installation">additional
+help</a> help
+for specific distributions and operating systems. Note, however, that
+S3QL wiki is editable by anyone. The information there has thus not
+been vetted by the S3QL maintainers, and may be wrong, out-of-date, or
+even dangerous. Generally, you should only follow steps from the Wiki
+that you fully understand yourself, and fall back on the instructions
+below when in doubt.</p>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>The following is a list of the programs and libraries required for
+running S3QL. Generally, you should first check if your distribution
+already provides a suitable packages and only install from source if
+that is not the case.</p>
+<ul>
+<li><p class="first">Kernel: Linux 2.6.9 or newer or FreeBSD with <a class="reference external" href="http://www.freshports.org/sysutils/fusefs-kmod/">FUSE4BSD</a>. Starting with
+kernel 2.6.26 you will get significantly better write performance,
+so under Linux you should actually use <em>2.6.26 or newer whenever
+possible</em>.</p>
+</li>
+<li><p class="first">The <a class="reference external" href="http://psmisc.sf.net/">psmisc</a> utilities.</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.sqlite.org/">SQLite</a> version 3.7.0 or newer. SQLite
+has to be installed as a <em>shared library</em> with development headers.</p>
+</li>
+<li><p class="first"><a class="reference external" href="http://www.python.org/">Python</a> 3.3.0 or newer. Make sure to also
+install the development headers.</p>
+</li>
+<li><p class="first">The following Python modules:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://pypi.python.org/pypi/setuptools">setuptools</a>, version 1.0 or newer.</li>
+<li><a class="reference external" href="https://www.dlitz.net/software/pycrypto/">pycrypto</a></li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/defusedxml/">defusedxml</a></li>
+<li><a class="reference external" href="https://pypi.python.org/pypi/requests/">requests</a> (optional,
+required for OAuth2 authentication with Google Storage)</li>
+<li><a class="reference external" href="https://github.com/systemd/python-systemd">systemd</a> (optional,
+for enabling systemd support).</li>
+<li><a class="reference external" href="https://github.com/rogerbinns/apsw">apsw</a>, version 3.7.0 or
+newer.</li>
+<li><a class="reference external" href="https://bitbucket.org/nikratio/python-llfuse/">llfuse</a>, any
+version between 1.0 (inclusive) and 2.0 (exclusive)</li>
+<li><a class="reference external" href="https://bitbucket.org/nikratio/python-dugong/">dugong</a>, any
+version between 3.4 (inclusive) and 4.0 (exclusive)</li>
+<li><a class="reference external" href="http://pytest.org/">pytest</a>, version 2.3.3 or newer (optional, to run unit tests)</li>
+<li><a class="reference external" href="https://github.com/eisensheng/pytest-catchlog">pytest-catchlog</a>
+(optional, to run unit tests)</li>
+</ul>
+<p>To check if a specific module <tt class="var docutils literal"><span class="pre">&lt;module&gt;</span></tt> is installed, execute
+<tt class="samp docutils literal"><span class="pre">python3</span> <span class="pre">-c</span> <span class="pre">'import</span> <em><span class="pre">&lt;module&gt;</span></em><span class="pre">;</span>
+<span class="pre">print(</span><em><span class="pre">&lt;module&gt;</span></em><span class="pre">.__version__)'</span></tt>. This will result in an
+<tt class="docutils literal"><span class="pre">ImportError</span></tt> if the module is not installed, and will print the
+installed version if the module is installed.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="installing-s3ql">
+<span id="inst-s3ql"></span><h2>Installing S3QL<a class="headerlink" href="#installing-s3ql" title="Permalink to this headline">¶</a></h2>
+<p>To build and install S3QL itself, proceed as follows:</p>
+<ol class="arabic simple">
+<li>Download S3QL from <a class="reference external" href="https://bitbucket.org/nikratio/s3ql/downloads">https://bitbucket.org/nikratio/s3ql/downloads</a></li>
+<li>Unpack it into a folder of your choice</li>
+<li>Run <tt class="docutils literal"><span class="pre">python3</span> <span class="pre">setup.py</span> <span class="pre">build_ext</span> <span class="pre">--inplace</span></tt> to build S3QL.</li>
+<li>Run <tt class="docutils literal"><span class="pre">python3</span> <span class="pre">-m</span> <span class="pre">pytest</span> <span class="pre">tests/</span></tt> to run a self-test. If this fails, ask
+for help on the <a class="reference external" href="http://groups.google.com/group/s3ql">mailing list</a> or report a bug in the
+<a class="reference external" href="https://bitbucket.org/nikratio/s3ql/issues">issue tracker</a>.</li>
+</ol>
+<p>Now you have three options:</p>
+<ul class="simple">
+<li>You can run the S3QL commands from the <tt class="docutils literal"><span class="pre">bin/</span></tt> directory.</li>
+<li>You can install S3QL system-wide for all users. To do that, you
+have to run <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">python3</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt>.</li>
+<li>You can install S3QL into <tt class="docutils literal"><span class="pre">~/.local</span></tt> by executing <tt class="docutils literal"><span class="pre">python3</span>
+<span class="pre">setup.py</span> <span class="pre">install</span> <span class="pre">--user</span></tt>. In this case you should make sure that
+<tt class="docutils literal"><span class="pre">~/.local/bin</span></tt> is in your <tt class="docutils literal"><span class="pre">$PATH</span></tt> environment variable.</li>
+</ul>
+</div>
+<div class="section" id="development-version">
+<h2>Development Version<a class="headerlink" href="#development-version" title="Permalink to this headline">¶</a></h2>
+<p>If you have checked out the unstable development version from the
+Mercurial repository, a bit more effort is required. You&#8217;ll also need:</p>
+<ul class="simple">
+<li>Version 0.24 or newer of the <a class="reference external" href="http://www.cython.org/">Cython</a> compiler.</li>
+<li>Version 1.2b1 or newer of the <a class="reference external" href="http://sphinx.pocoo.org/">Sphinx</a> document processor.</li>
+</ul>
+<p>With these additional dependencies installed, S3QL can be build and
+tested with</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">python3 setup.py build_cython</span>
+<span class="l">python3 setup.py build_ext --inplace</span>
+<span class="l">python3 -m pytest tests/</span>
+</pre></div>
+</div>
+<p>Note that when building from the Mercurial or Git repository, building
+and testing is done with several additional checks. This may cause
+compilation and/or tests to fail even though there are no problems
+with functionality. For example, any use of functions that are
+scheduled for deprecation in future Python version will cause tests to
+fail. If you would rather just check for functionality, you can delete
+the <tt class="file docutils literal"><span class="pre">MANIFEST.in</span></tt> file. In that case, the build system will
+behave as it does for a regular release.</p>
+<p>The HTML and PDF documentation can be generated with</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">python3 setup.py build_sphinx</span>
+</pre></div>
+</div>
+<p>and S3QL can be installed as usual with</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">python3 setup.py install </span><span class="ge">[--user]</span><span class="l"></span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-tests-requiring-remote-servers">
+<h2>Running tests requiring remote servers<a class="headerlink" href="#running-tests-requiring-remote-servers" title="Permalink to this headline">¶</a></h2>
+<p>By default, tests requiring a connection to a remote storage backend
+are skipped. If you would like to run these tests too (which is always
+a good idea), you have to create additional entries in your
+<tt class="docutils literal"><span class="pre">~/.s3ql/authinfo2</span></tt> file that tell S3QL what server and credentials to
+use for these tests. These entries have the following form:</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="ge">[&lt;BACKEND&gt;-test]</span><span class="l"></span>
+<span class="l">backend-login: </span><span class="nv">&lt;user&gt;</span><span class="l"></span>
+<span class="l">backend-password: </span><span class="nv">&lt;password&gt;</span><span class="l"></span>
+<span class="l">test-fs: </span><span class="nv">&lt;storage-url&gt;</span><span class="l"></span>
+</pre></div>
+</div>
+<p>Here <em>&lt;BACKEND&gt;</em> specifies the backend that you want to test
+(e.g. <em>s3</em>, <em>s3c</em>, <em>gs</em>, or <em>swift</em>), <em>&lt;user&gt;</em> and <em>&lt;password&gt;</em> are
+the backend authentication credentials, and <em>&lt;storage-url&gt;</em> specifies
+the full storage URL that will be used for testing. <strong>Any existing
+S3QL file system in this storage URL will be destroyed during
+testing</strong>.</p>
+<p>For example, to run tests that need connection to a Google Storage
+server, you would add something like</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="ge">[gs-test]</span><span class="l"></span>
+<span class="l">backend-login: GOOGIGWLONT238MD7HZ4</span>
+<span class="l">backend-password: rmEbstjscoeunt1249oes1298gauidbs3hl</span>
+<span class="l">test-fs: gs://joes-gs-bucket/s3ql_tests/</span>
+</pre></div>
+</div>
+<p>On the next run of <tt class="docutils literal"><span class="pre">runtest.py</span></tt> (or <tt class="docutils literal"><span class="pre">py.test</span></tt> when using the
+development version), the additional tests will be run. If the tests
+are still skipped, you can get more information about why tests are
+being skipped by passing the <tt class="cmdopt docutils literal"><span class="pre">-rs</span></tt> argument to
+<tt class="docutils literal"><span class="pre">runtest.py</span></tt>/<tt class="docutils literal"><span class="pre">py.test</span></tt>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="backends.html" title="Storage Backends"
+             >next</a></li>
+        <li class="right" >
+          <a href="about.html" title="About S3QL"
+             >previous</a> |</li>
+        <li><a href="index.html">S3QL 2.21 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright © 2008 Nikolaus Rath &lt;Nikolaus@rath.org&gt;.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

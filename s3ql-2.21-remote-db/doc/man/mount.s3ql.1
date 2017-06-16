@@ -1,0 +1,238 @@
+.\" Man page generated from reStructuredText.
+.
+.TH "MOUNT.S3QL" "1" "October 28, 2016" "2.21" "S3QL"
+.SH NAME
+mount.s3ql \- Mount an S3QL file system
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.SH SYNOPSIS
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mount.s3ql [options] <storage url> <mount point>
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH DESCRIPTION
+.sp
+S3QL is a file system for online data storage. Before using S3QL, make
+sure to consult the full documentation (rather than just the man pages
+which only briefly document the available userspace commands).
+.sp
+The \fBmount.s3ql\fP command mounts the S3QL file system stored in \fIstorage
+url\fP in the directory \fImount point\fP\&. The storage url depends on the
+backend that is used. The S3QL User\(aqs Guide should be consulted for a
+description of the available backends.
+.SH OPTIONS
+.sp
+The \fBmount.s3ql\fP command accepts the following options.
+.INDENT 0.0
+.INDENT 3.5
+.INDENT 0.0
+.TP
+.BI \-\-log \ <target>
+Destination for log messages. Specify \fBnone\fP for
+standard output or \fBsyslog\fP for the system logging
+daemon. Anything else will be interpreted as a file
+name. Log files will be rotated when they reach 1 MiB,
+and at most 5 old log files will be kept. Default:
+\fB~/.s3ql/mount.log\fP
+.TP
+.BI \-\-cachedir \ <path>
+Store cached data in this directory (default:
+\fB~/.s3ql)\fP
+.TP
+.BI \-\-authfile \ <path>
+Read authentication credentials from this file
+(default: \fB~/.s3ql/authinfo2)\fP
+.TP
+.BI \-\-debug\-modules \ <modules>
+Activate debugging output from specified modules (use
+commas to separate multiple modules). Debug messages
+will be written to the target specified by the
+\fB\-\-log\fP option.
+.TP
+.B \-\-debug
+Activate debugging output from all S3QL modules. Debug
+messages will be written to the target specified by
+the \fB\-\-log\fP option.
+.TP
+.B \-\-quiet
+be really quiet
+.TP
+.BI \-\-backend\-options \ <options>
+Backend specific options (separate by commas). See
+backend documentation for available options.
+.TP
+.B \-\-version
+just print program version and exit
+.TP
+.BI \-\-cachesize \ <size>
+Cache size in KiB (default: autodetect).
+.TP
+.BI \-\-max\-cache\-entries \ <num>
+Maximum number of entries in cache (default:
+autodetect). Each cache entry requires one file
+descriptor, so if you increase this number you have to
+make sure that your process file descriptor limit (as
+set with \fBulimit \-n\fP) is high enough (at least the
+number of cache entries + 100).
+.TP
+.B \-\-allow\-other
+Normally, only the user who called \fBmount.s3ql\fP can
+access the mount point. This user then also has full
+access to it, independent of individual file
+permissions. If the \fB\-\-allow\-other\fP option is
+specified, other users can access the mount point as
+well and individual file permissions are taken into
+account for all users.
+.TP
+.B \-\-allow\-root
+Like \fB\-\-allow\-other\fP, but restrict access to the
+mounting user and the root user.
+.TP
+.B \-\-fg
+Do not daemonize, stay in foreground
+.TP
+.B \-\-upstart
+Stay in foreground and raise SIGSTOP once mountpoint
+is up.
+.TP
+.BI \-\-compress \ <algorithm\-lvl>
+Compression algorithm and compression level to use
+when storing new data. \fIalgorithm\fP may be any of
+\fBlzma\fP, \fBbzip2\fP, \fBzlib\fP, or none. \fIlvl\fP may be any
+integer from 0 (fastest) to 9 (slowest). Default:
+\fBlzma\-6\fP
+.TP
+.BI \-\-metadata\-upload\-interval \ <seconds>
+Interval in seconds between complete metadata uploads.
+Set to 0 to disable. Default: 24h.
+.TP
+.BI \-\-threads \ <no>
+Number of parallel upload threads to use (default:
+auto).
+.TP
+.B \-\-nfs
+Enable some optimizations for exporting the file
+system over NFS. (default: False)
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SH EXIT CODES
+.sp
+\fBmount.s3ql\fP may terminate with the following exit codes:
+.INDENT 0.0
+.TP
+.B 0
+Everything went well.
+.TP
+.B 1
+An unexpected error occured. This may indicate a bug in the
+program.
+.TP
+.B 2
+Invalid command line argument.
+.TP
+.B 3
+Invalid backend option.
+.TP
+.B 10
+Could not open log file for writing.
+.TP
+.B 11
+No such backend.
+.TP
+.B 12
+Authentication file has insecure permissions.
+.TP
+.B 13
+Unable to parse proxy settings.
+.TP
+.B 14
+Invalid credentials (Authentication failed).
+.TP
+.B 15
+No permission to access backend (Authorization denied).
+.TP
+.B 16
+Invalid storage URL, specified location does not exist in backend.
+.TP
+.B 17
+Wrong file system passphrase.
+.TP
+.B 18
+No S3QL file system found at given storage URL.
+.TP
+.B 19
+Unable to connect to backend, can\(aqt resolve hostname.
+.TP
+.B 30
+File system was not unmounted cleanly.
+.TP
+.B 31
+File system appears to be mounted elsewhere.
+.TP
+.B 32
+Unsupported file system revision (too old).
+.TP
+.B 33
+Unsupported file system revision (too new).
+.TP
+.B 34
+Insufficient free nodes, need to run \fBfsck.s3ql\fP\&.
+.TP
+.B 35
+Attempted to mount read\-only, this is not supported.
+.TP
+.B 36
+Mountpoint does not exist.
+.TP
+.B 37
+Not enough available file descriptors.
+.TP
+.B 39
+Unable to bind file system to mountpoint.
+.TP
+.B 45
+Unable to access cache directory.
+.UNINDENT
+.SH SEE ALSO
+.sp
+The S3QL homepage is at \fI\%https://bitbucket.org/nikratio/s3ql/\fP\&.
+.sp
+The full S3QL documentation should also be installed somewhere on your
+system, common locations are \fB/usr/share/doc/s3ql\fP or
+\fB/usr/local/doc/s3ql\fP\&.
+.SH COPYRIGHT
+© 2008 Nikolaus Rath <Nikolaus@rath.org>
+.\" Generated by docutils manpage writer.
+.

@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Mounting &mdash; S3QL 2.21 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.21',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="top" title="S3QL 2.21 documentation" href="index.html" />
+    <link rel="next" title="Advanced S3QL Features" href="special.html" />
+    <link rel="prev" title="Managing File Systems" href="adm.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="special.html" title="Advanced S3QL Features"
+             accesskey="N">next</a></li>
+        <li class="right" >
+          <a href="adm.html" title="Managing File Systems"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">S3QL 2.21 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">About S3QL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backends.html">Storage Backends</a></li>
+<li class="toctree-l1"><a class="reference internal" href="durability.html">Important Rules to Avoid Losing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mkfs.html">File System Creation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adm.html">Managing File Systems</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Mounting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#permission-checking">Permission Checking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compression-algorithms">Compression Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#notes-about-caching">Notes about Caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#failure-modes">Failure Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#automatic-mounting">Automatic Mounting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="special.html">Advanced S3QL Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="umount.html">Unmounting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fsck.html">Checking for Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="authinfo.html">Storing Authentication Information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contrib.html">Contributed Programs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tips.html">Tips &amp; Tricks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="issues.html">Known Issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="man/index.html">Manpages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">Further Resources / Getting Help</a></li>
+<li class="toctree-l1"><a class="reference internal" href="impl_details.html">Implementation Details</a></li>
+</ul>
+
+          
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mounting">
+<h1>Mounting<a class="headerlink" href="#mounting" title="Permalink to this headline">¶</a></h1>
+<p>A S3QL file system is mounted with the <strong class="program">mount.s3ql</strong>
+command. It has the following syntax:</p>
+<div class="highlight-commandline"><div class="highlight"><pre><span class="l">mount.s3ql </span><span class="ge">[options]</span><span class="l"> </span><span class="nv">&lt;storage url&gt;</span><span class="l"> </span><span class="nv">&lt;mountpoint&gt;</span><span class="l"></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">S3QL is not a network file system like <a class="reference external" href="http://en.wikipedia.org/wiki/Network_File_System_%28protocol%29">NFS</a>
+or <a class="reference external" href="http://en.wikipedia.org/wiki/CIFS">CIFS</a>. It can only be
+mounted on one computer at a time.</p>
+</div>
+<p>This command accepts the following options:</p>
+<blockquote>
+<div><table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--log <var>&lt;target&gt;</var></span></kbd></td>
+<td>Destination for log messages. Specify <tt class="docutils literal"><span class="pre">none</span></tt> for
+standard output or <tt class="docutils literal"><span class="pre">syslog</span></tt> for the system logging
+daemon. Anything else will be interpreted as a file
+name. Log files will be rotated when they reach 1 MiB,
+and at most 5 old log files will be kept. Default:
+<tt class="docutils literal"><span class="pre">~/.s3ql/mount.log</span></tt></td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--cachedir <var>&lt;path&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Store cached data in this directory (default:
+<tt class="docutils literal"><span class="pre">~/.s3ql)</span></tt></td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--authfile <var>&lt;path&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Read authentication credentials from this file
+(default: <tt class="docutils literal"><span class="pre">~/.s3ql/authinfo2)</span></tt></td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--debug-modules <var>&lt;modules&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Activate debugging output from specified modules (use
+commas to separate multiple modules). Debug messages
+will be written to the target specified by the
+<tt class="docutils literal"><span class="pre">--log</span></tt> option.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--debug</span></kbd></td>
+<td>Activate debugging output from all S3QL modules. Debug
+messages will be written to the target specified by
+the <tt class="docutils literal"><span class="pre">--log</span></tt> option.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--quiet</span></kbd></td>
+<td>be really quiet</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--backend-options <var>&lt;options&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Backend specific options (separate by commas). See
+backend documentation for available options.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--version</span></kbd></td>
+<td>just print program version and exit</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--cachesize <var>&lt;size&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Cache size in KiB (default: autodetect).</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--max-cache-entries <var>&lt;num&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Maximum number of entries in cache (default:
+autodetect). Each cache entry requires one file
+descriptor, so if you increase this number you have to
+make sure that your process file descriptor limit (as
+set with <tt class="docutils literal"><span class="pre">ulimit</span> <span class="pre">-n</span></tt>) is high enough (at least the
+number of cache entries + 100).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--allow-other</span></kbd></td>
+<td>Normally, only the user who called <tt class="docutils literal"><span class="pre">mount.s3ql</span></tt> can
+access the mount point. This user then also has full
+access to it, independent of individual file
+permissions. If the <tt class="docutils literal"><span class="pre">--allow-other</span></tt> option is
+specified, other users can access the mount point as
+well and individual file permissions are taken into
+account for all users.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--allow-root</span></kbd></td>
+<td>Like <tt class="docutils literal"><span class="pre">--allow-other</span></tt>, but restrict access to the
+mounting user and the root user.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--fg</span></kbd></td>
+<td>Do not daemonize, stay in foreground</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--upstart</span></kbd></td>
+<td>Stay in foreground and raise SIGSTOP once mountpoint
+is up.</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--compress <var>&lt;algorithm-lvl&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Compression algorithm and compression level to use
+when storing new data. <em>algorithm</em> may be any of
+<tt class="docutils literal"><span class="pre">lzma</span></tt>, <tt class="docutils literal"><span class="pre">bzip2</span></tt>, <tt class="docutils literal"><span class="pre">zlib</span></tt>, or none. <em>lvl</em> may be any
+integer from 0 (fastest) to 9 (slowest). Default:
+<tt class="docutils literal"><span class="pre">lzma-6</span></tt></td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--metadata-upload-interval <var>&lt;seconds&gt;</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Interval in seconds between complete metadata uploads.
+Set to 0 to disable. Default: 24h.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--threads <var>&lt;no&gt;</var></span></kbd></td>
+<td>Number of parallel upload threads to use (default:
+auto).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">--nfs</span></kbd></td>
+<td>Enable some optimizations for exporting the file
+system over NFS. (default: False)</td></tr>
+</tbody>
+</table>
+</div></blockquote>
+<div class="section" id="permission-checking">
+<h2>Permission Checking<a class="headerlink" href="#permission-checking" title="Permalink to this headline">¶</a></h2>
+<p>If the file system is mounted with neither the <tt class="cmdopt docutils literal"><span class="pre">allow-root</span></tt>
+nor <tt class="cmdopt docutils literal"><span class="pre">allow-other</span></tt> option, the mounting user has full
+permissions on the S3QL file system (he is effectively root). If one
+(or both) of the options is used, standard unix permission checks
+apply, i.e. only the real root user has full access and all other
+users (including the mounting user) are subject to permission checks.</p>
+</div>
+<div class="section" id="compression-algorithms">
+<h2>Compression Algorithms<a class="headerlink" href="#compression-algorithms" title="Permalink to this headline">¶</a></h2>
+<p>S3QL supports three compression algorithms, LZMA, Bzip2 and zlib (with
+LZMA being the default). The compression algorithm can be specified
+freely whenever the file system is mounted, since it affects only the
+compression of new data blocks.</p>
+<p>Roughly speaking, LZMA is slower but achieves better compression
+ratios than Bzip2, while Bzip2 in turn is slower but achieves better
+compression ratios than zlib.</p>
+<p>For maximum file system performance, the best algorithm therefore
+depends on your network connection speed: the compression algorithm
+should be fast enough to saturate your network connection.</p>
+<p>To find the optimal algorithm and number of parallel compression
+threads for your system, S3QL ships with a program called
+<tt class="docutils literal"><span class="pre">benchmark.py</span></tt> in the <tt class="docutils literal"><span class="pre">contrib</span></tt> directory. You should run this program
+on a file that has a size that is roughly equal to the block size of
+your file system and has similar contents. It will then determine the
+compression speeds for the different algorithms and the upload speeds
+for the specified backend and recommend the best algorithm that is
+fast enough to saturate your network connection.</p>
+<p>Obviously you should make sure that there is little other system load
+when you run <tt class="docutils literal"><span class="pre">benchmark.py</span></tt> (i.e., don&#8217;t compile software or encode
+videos at the same time).</p>
+</div>
+<div class="section" id="notes-about-caching">
+<h2>Notes about Caching<a class="headerlink" href="#notes-about-caching" title="Permalink to this headline">¶</a></h2>
+<p>S3QL maintains a local cache of the file system data to speed up
+access. The cache is block based, so it is possible that only parts of
+a file are in the cache.</p>
+<div class="section" id="maximum-number-of-cache-entries">
+<h3>Maximum Number of Cache Entries<a class="headerlink" href="#maximum-number-of-cache-entries" title="Permalink to this headline">¶</a></h3>
+<p>The maximum size of the cache can be configured with the
+<tt class="cmdopt docutils literal"><span class="pre">--cachesize</span></tt> option. In addition to that, the maximum number
+of objects in the cache is limited by the
+<tt class="cmdopt docutils literal"><span class="pre">--max-cache-entries</span></tt> option, so it is possible that the cache
+does not grow up to the maximum cache size because the maximum number
+of cache elements has been reached. The reason for this limit is that
+each cache entry requires one open file descriptor, and Linux
+distributions usually limit the total number of file descriptors per
+process to about a thousand.</p>
+<p>If you specify a value for <tt class="cmdopt docutils literal"><span class="pre">--max-cache-entries</span></tt>, you should
+therefore make sure to also configure your system to increase the
+maximum number of open file handles. This can be done temporarily with
+the <strong class="program">ulimit -n</strong> command. The method to permanently change this limit
+system-wide depends on your distribution.</p>
+</div>
+<div class="section" id="cache-flushing-and-expiration">
+<h3>Cache Flushing and Expiration<a class="headerlink" href="#cache-flushing-and-expiration" title="Permalink to this headline">¶</a></h3>
+<p>S3QL flushes changed blocks in the cache to the backend whenever a block
+has not been accessed for at least 10 seconds. Note that when a block is
+flushed, it still remains in the cache.</p>
+<p>Cache expiration (i.e., removal of blocks from the cache) is only done
+when the maximum cache size is reached. S3QL always expires the least
+recently used blocks first.</p>
+</div>
+</div>
+<div class="section" id="failure-modes">
+<h2>Failure Modes<a class="headerlink" href="#failure-modes" title="Permalink to this headline">¶</a></h2>
+<p>Once an S3QL file system has been mounted, there is a multitude of
+problems that can occur when communicating with the remote
+server. Generally, <strong class="program">mount.s3ql</strong> always tries to keep the file
+system as accessible as possible under the circumstances. That means
+that if network connectivity is lost, data can still be written as
+long as there is space in the local cache. Attempts to read data not
+already present in the cache, however, will block until connection is
+re-established. If any sort of data corruption is detected, the file
+system will switch to read-only mode. Attempting to read files that
+are affected by the corruption will return an input/output error
+(<em>errno</em> set to <tt class="docutils literal"><span class="pre">EIO</span></tt>).</p>
+<p>In case of other unexpected or fatal problems, <strong class="program">mount.s3ql</strong>
+terminates, but does not unmount the file system. Any attempt to
+access the mountpoint will result in a &#8220;Transport endpoint not
+connected&#8221; error (<em>errno</em> set to <tt class="docutils literal"><span class="pre">ESHUTDOWN</span></tt>). This ensures that a
+mountpoint whose <strong class="program">mount.s3ql</strong> process has terminated can not
+be confused with a mountpoint containing an empty file system (which
+would be fatal if e.g. the mountpoint is automatically mirrored). When
+this has happened, the mountpoint can be cleared by using the
+<strong class="program">fusermount</strong> command (provided by FUSE) with the <tt class="docutils literal"><span class="pre">-u</span></tt>
+parameter.</p>
+<p><strong class="program">mount.s3ql</strong> will automatically try to re-establish the
+connection to the server if network connectivity is lost, and retry
+sending a request when the connection is established but the remote
+server signals a temporary problem. These attempts will be made at
+increasing intervals for a period up to 24 hours, with retry intervals
+starting at 20 ms and increasing up to 5 minutes. After 24 hours,
+<strong class="program">mount.s3ql</strong> will give up and terminate, leaving the
+mountpoint inaccessible as described above.</p>
+<p>Generally, <strong class="program">mount.s3ql</strong> will also emit log messages for any
+unusual conditions that it encounters. The destination for these
+messages can be set with the <tt class="cmdopt docutils literal"><span class="pre">--log</span></tt> parameter. It is highly
+recommended to periodically check these logs, for example with a tool
+like <a class="reference external" href="http://sourceforge.net/projects/logcheck/">logcheck</a>. Many potential issues that <strong class="program">mount.s3ql</strong> may
+encounter do not justify restricting access to the file system, but
+should nevertheless be investigated if they occur. Checking the log
+messages is the only way to find out about them.</p>
+</div>
+<div class="section" id="automatic-mounting">
+<h2>Automatic Mounting<a class="headerlink" href="#automatic-mounting" title="Permalink to this headline">¶</a></h2>
+<p>If you want to mount and umount an S3QL file system automatically at
+system startup and shutdown, you should do so with a dedicated S3QL
+init job (instead of using <tt class="file docutils literal"><span class="pre">/etc/fstab</span></tt>. When using systemd,
+<strong class="program">mount.s3ql</strong> can be run as a service of type <tt class="docutils literal"><span class="pre">notify</span></tt>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>In principle, it is also possible to automatically mount an S3QL
+file system with an appropriate entry in <tt class="docutils literal"><span class="pre">/etc/fstab</span></tt>. However,
+this is not recommended for several reasons:</p>
+<ul class="last simple">
+<li>file systems mounted in <tt class="file docutils literal"><span class="pre">/etc/fstab</span></tt> will be unmounted with the
+<strong class="program">umount</strong> command, so your system will not wait until all data has
+been uploaded but shutdown (or restart) immediately (this is a
+FUSE limitation, see <a class="reference external" href="https://bitbucket.org/nikratio/s3ql/issue/1/blocking-fusermount-and-umount">issue #1</a>).</li>
+<li>There is no way to tell the system that mounting S3QL requires a
+Python interpreter to be available, so it may attempt to run
+<strong class="program">mount.s3ql</strong> before it has mounted the volume containing
+the Python interpreter.</li>
+<li>There is no standard way to tell the system that internet
+connection has to be up before the S3QL file system can be
+mounted.</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="special.html" title="Advanced S3QL Features"
+             >next</a></li>
+        <li class="right" >
+          <a href="adm.html" title="Managing File Systems"
+             >previous</a> |</li>
+        <li><a href="index.html">S3QL 2.21 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright © 2008 Nikolaus Rath &lt;Nikolaus@rath.org&gt;.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
