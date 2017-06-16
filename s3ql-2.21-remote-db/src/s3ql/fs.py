@@ -327,7 +327,9 @@ class Operations(llfuse.Operations):
             if len(value) > deltadump.MAX_BLOB_SIZE:
                 raise FUSEError(errno.EINVAL)
 
-            self.db.execute('INSERT OR REPLACE INTO ext_attributes (inode, name_id, value) '
+            # self.db.execute('INSERT OR REPLACE INTO ext_attributes (inode, name_id, value) '
+            #                 'VALUES(%s, %s, %s)', (id_, self._add_name(name), value))
+            self.db.execute('REPLACE INTO ext_attributes (inode, name_id, value) '
                             'VALUES(%s, %s, %s)', (id_, self._add_name(name), value))
             self.inodes[id_].ctime_ns = time_ns()
 

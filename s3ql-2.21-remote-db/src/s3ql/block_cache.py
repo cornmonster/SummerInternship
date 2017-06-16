@@ -562,7 +562,9 @@ class BlockCache(object):
                     log.debug('(re)linking to %d', block_id)
                     self.db.execute('UPDATE blocks SET refcount=refcount+1 WHERE id=%s',
                                     (block_id,))
-                    self.db.execute('INSERT OR REPLACE INTO inode_blocks (block_id, inode, blockno) '
+                    # self.db.execute('INSERT OR REPLACE INTO inode_blocks (block_id, inode, blockno) '
+                    #                 'VALUES(%s,%s,%s)', (block_id, el.inode, el.blockno))
+                    self.db.execute('REPLACE INTO inode_blocks (block_id, inode, blockno) '
                                     'VALUES(%s,%s,%s)', (block_id, el.inode, el.blockno))
 
                 el.dirty = False
