@@ -527,3 +527,24 @@ Solution:
 Today I am going to run the modified version of s3ql.
 
 konsole
+
+---6/18/2017---
+
+Today my target is getting familiar with google python coding style.
+
+1. should run pylint over my code
+
+2. modules should be imported as "import module_name" or "from package_name import module_name".
+   if module names collide, use "from package_name import module_name as another_module_name"
+
+3. import each module using the full pathname location of the module. for example, "from sound.effects import echo"
+
+4. exceptions
+   a) exceptions should be raised like this: "raise MyException('Error Msg')" or "raise MyException"
+   b) modules or packages should define their own domain-sepcific base exception class.
+   c) minimize the amount of code in a try/except block.
+   d) always use 'finally'
+
+5. global variables avoid it
+
+6. simple list comprehensions are fine
